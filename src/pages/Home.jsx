@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import "../Retro.css";
+import { Link } from "react-router-dom"; // 페이지 이동용
+import "../Retro.css"; // 디자인 파일
 
 const Home = () => {
+  // =================================================================
+  // 1. [상태 관리] 변수 선언부
+  // =================================================================
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // 식단 & 장보기 데이터를 모두 관리
   const [dashboardData, setDashboardData] = useState({
     mealCount: 0,
     recentMenu: "기록 없음",
-    shoppingCount: 0, // 장보기 개수 추가
+    shoppingCount: 0,
     shoppingMsg: "장바구니가 비었어요!",
   });
 
+  // =================================================================
+  // 2. [기능 함수] 날짜 변환 및 이동
+  // =================================================================
   const getDateStr = (dateObj) => {
     const year = dateObj.getFullYear();
     const month = String(dateObj.getMonth() + 1).padStart(2, "0");
@@ -20,22 +25,34 @@ const Home = () => {
     return `${year}-${month}-${day}`;
   };
 
+  const changeDate = (days) => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + days);
+    setCurrentDate(newDate);
+  };
+
+  const formattedDate = currentDate.toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "long",
+  });
+
+  // =================================================================
+  // 3. [서버 통신] 데이터 가져오기
+  // =================================================================
   useEffect(() => {
     const dateStr = getDateStr(currentDate);
 
-    // 1. 식단 데이터 가져오기
     const fetchMeals = fetch(
       `http://localhost:8080/api/meals?date=${dateStr}`
     ).then((res) => res.json());
-    // 2. 장보기 데이터 가져오기
     const fetchShopping = fetch(
       `http://localhost:8080/api/shopping?date=${dateStr}`
     ).then((res) => res.json());
 
-    // 두 데이터를 모두 기다렸다가(Promise.all) 화면 업데이트
     Promise.all([fetchMeals, fetchShopping])
       .then(([meals, shoppingItems]) => {
-        // 안 산 물건 개수 세기 (isBought가 false인 것만)
         const toBuyCount = shoppingItems.filter(
           (item) => !item.isBought
         ).length;
@@ -52,23 +69,26 @@ const Home = () => {
       .catch((err) => console.error("데이터 로딩 실패:", err));
   }, [currentDate]);
 
-  const changeDate = (days) => {
-    const newDate = new Date(currentDate);
-    newDate.setDate(newDate.getDate() + days);
-    setCurrentDate(newDate);
-  };
-
-  const formattedDate = currentDate.toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "long",
-  });
-
+  // =================================================================
+  // 4. [화면 렌더링] UI 구성
+  // =================================================================
   return (
     <div className="home-container">
+      {/* 헤더 영역: 타이틀 교체 완료 */}
       <header className="dashboard-header">
-        <h2>ㅇㅇ님, 안녕하세요! 👋</h2>
+        {/* ★ 수정됨: 인사말 대신 메인 타이틀 배치 ★ */}
+        <h2
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "10px",
+          }}
+        >
+          <span>🏠</span> HOME DASHBOARD
+        </h2>
+
+        {/* 날짜 네비게이션 */}
         <div
           style={{
             display: "flex",
@@ -112,6 +132,7 @@ const Home = () => {
         </div>
       </header>
 
+      {/* 대시보드 카드 영역 */}
       <div className="dashboard-grid">
         {/* 식단 카드 */}
         <div className="card">
@@ -132,7 +153,6 @@ const Home = () => {
             <span>장보기 목록</span>
             <span>🛒</span>
           </h3>
-          {/* 안 산 물건 개수 표시 */}
           <div className="count-box">{dashboardData.shoppingCount}</div>
           <p className="sub-text">{dashboardData.shoppingMsg}</p>
           <Link to="/shopping">
