@@ -1,3 +1,5 @@
+/* src/Retro.css 전체 코드 */
+
 /* ============================================================
    [폰트 설정] 구글 폰트(Jua) 불러오기 
    ============================================================ */
@@ -6,24 +8,19 @@
 /* [전체 페이지 기본 설정] */
 body {
   margin: 0;
-  font-family: "Jua", sans-serif; /* 전체 글꼴 적용 */
-  font-weight: 400; /* Jua 폰트 깨짐 방지를 위해 두께 고정 */
-  -webkit-font-smoothing: antialiased; /* 글씨를 부드럽게 처리 */
+  font-family: "Jua", sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  background: #f4f7fe; /* 전체 배경색 (연한 하늘색) */
-
-  /* 내용을 화면 정중앙에 놓기 위한 Flexbox 설정 */
+  background: #f4f7fe;
   display: flex;
   justify-content: center;
   min-height: 100vh;
 }
 
 /* ============================================================
-   1. 헤더 영역 (네비게이션 바)
+   1. 헤더 영역
    ============================================================ */
-
-/* 헤더 위치 고정 (스크롤해도 따라옴) */
 .pixel-nav-container {
   position: fixed;
   top: 15px;
@@ -31,30 +28,25 @@ body {
   width: 100%;
   display: flex;
   justify-content: center;
-  z-index: 1000; /* 다른 요소보다 무조건 위에 뜨게 함 */
+  z-index: 1000;
 }
 
-/* 헤더 박스 디자인 */
 .pixel-nav-bar {
   width: 94%;
   max-width: 1100px;
   height: 50px;
-  background-image: url("/background.png"); /* 배경 이미지 */
+  background-image: url("/background.png");
   background-size: cover;
   background-position: center;
-  border-radius: 16px; /* 모서리 둥글게 */
-
-  /* ★ [레이아웃 핵심] 양쪽 끝 정렬 ★ */
+  border-radius: 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between; /* 로고(왼쪽) - 유저정보(오른쪽)으로 찢음 */
-  position: relative; /* 자식 요소(가운데 탭)의 기준점이 됨 */
-
+  justify-content: space-between;
+  position: relative;
   padding: 0 25px;
-  box-shadow: 0 5px 15px rgba(170, 183, 236, 0.2); /* 은은한 그림자 */
+  box-shadow: 0 5px 15px rgba(170, 183, 236, 0.2);
 }
 
-/* [로고 영역] 물방울 + 글씨 컨테이너 */
 .nav-logo-small {
   width: auto;
   height: 100%;
@@ -63,66 +55,51 @@ body {
   justify-content: flex-start;
   cursor: pointer;
   text-decoration: none;
-  gap: 8px; /* 물방울과 글씨 사이 간격 */
+  gap: 8px;
 }
-
-/* 기존 이미지 태그 숨김 (CSS로 그리기 때문) */
 .nav-logo-small img {
   display: none !important;
 }
 
-/* ★ [디자인] CSS로 직접 그린 물방울 로고 (::before) ★ */
 .nav-logo-small::before {
   content: "";
   display: block;
   width: 26px;
   height: 26px;
-  /* 그라데이션 색상 */
   background: linear-gradient(135deg, #ffffff 20%, #bfdbfe 100%);
-  border-radius: 0% 50% 50% 50%; /* 물방울 모양 만들기 */
-  transform: rotate(45deg) translateY(-2px); /* 각도 돌려서 모양 잡기 */
-
-  /* 입체감을 위한 그림자 */
+  border-radius: 0% 50% 50% 50%;
+  transform: rotate(45deg) translateY(-2px);
   box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.9),
     inset -2px -2px 5px rgba(94, 114, 228, 0.15),
     1px 2px 6px rgba(94, 114, 228, 0.3);
   border: 0.5px solid rgba(255, 255, 255, 0.6);
-
-  /* 위치 미세 조정 */
   margin-top: 6px;
   margin-left: -15px;
 }
 
-/* 'Pocket Life' 글씨 스타일 */
 .logo-text {
   font-family: "Jua", sans-serif;
   font-weight: 400;
   font-size: 22px;
-  color: #5e72e4; /* 테마 블루 색상 */
+  color: #5e72e4;
   padding-top: 4px;
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);
-  white-space: nowrap; /* 줄바꿈 금지 */
+  white-space: nowrap;
 }
 
-/* ★ [핵심] 메뉴 탭 강제 중앙 정렬 (Absolute Positioning) ★ 
-   로고나 유저 정보 길이에 상관없이 무조건 화면 정중앙에 위치시킴 */
 .nav-tabs {
-  position: absolute; /* 부모(pixel-nav-bar) 기준으로 둥둥 띄움 */
-  left: 50%; /* 부모의 50% 지점으로 이동 */
-  transform: translateX(
-    -50%
-  ); /* 내 크기의 절반만큼 다시 왼쪽으로 가서 완벽한 중앙 맞춤 */
-
-  background: rgba(255, 255, 255, 0.5); /* 반투명 배경 */
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.5);
   border-radius: 12px;
   display: flex;
   align-items: center;
   padding: 3px;
-  backdrop-filter: blur(5px); /* 뒤쪽 배경 흐리게 (유리 효과) */
+  backdrop-filter: blur(5px);
   margin: 0;
 }
 
-/* 개별 메뉴 탭 버튼 */
 .nav-tab {
   text-decoration: none;
   color: #5e72e4;
@@ -131,24 +108,19 @@ body {
   font-size: 17px;
   padding: 6px 18px;
   border-radius: 10px;
-  transition: 0.3s; /* 마우스 올렸을 때 부드럽게 변함 */
+  transition: 0.3s;
 }
-
-/* 활성화된 탭 (현재 페이지) 스타일 */
 .nav-tab.active {
   background: #ffffff;
   color: #5e72e4;
   box-shadow: 0 2px 8px rgba(94, 114, 228, 0.15);
 }
 
-/* 메뉴 사이 구분선 (|) */
 .nav-divider {
   width: 1px;
   height: 12px;
   background: rgba(94, 114, 228, 0.2);
 }
-
-/* 우측 사용자 정보 텍스트 */
 .nav-user-info {
   color: #5e72e4;
   font-size: 16px;
@@ -157,10 +129,8 @@ body {
 }
 
 /* ============================================================
-   2. 메인 콘텐츠 및 리스트 UI (카드, 입력창, 리스트)
+   2. 메인 콘텐츠 및 리스트 UI
    ============================================================ */
-
-/* 헤더 아래쪽 여백 확보 및 중앙 정렬 */
 .main-content {
   margin-top: 100px;
   width: 100%;
@@ -169,19 +139,16 @@ body {
   padding-bottom: 60px;
 }
 
-/* 하얀색 메인 카드 박스 */
 .pixel-card {
   background: #ffffff;
   border-radius: 30px;
   padding: 40px;
   width: 650px;
-  box-shadow: 0 20px 50px rgba(170, 183, 236, 0.15); /* 깊은 그림자 */
+  box-shadow: 0 20px 50px rgba(170, 183, 236, 0.15);
   display: flex;
-  flex-direction: column; /* 내용물을 세로로 쌓음 */
-  align-items: center; /* 가로 기준 가운데 정렬 */
+  flex-direction: column;
+  align-items: center;
 }
-
-/* 카드 내부 제목 스타일 */
 .pixel-card h2,
 .pixel-card h3 {
   color: #2d3748;
@@ -189,17 +156,14 @@ body {
   font-weight: 400;
 }
 
-/* 입력창 + 버튼 그룹 (가로 배치) */
 .input-group {
   display: flex;
   width: 100%;
-  gap: 15px; /* 입력창과 버튼 사이 간격 */
+  gap: 15px;
   margin-bottom: 30px;
 }
-
-/* 입력창 (Input) */
 .pixel-input {
-  flex: 1; /* 남은 공간을 꽉 채움 */
+  flex: 1;
   background: #f8fafc;
   border: 2px solid #e2e8f0;
   border-radius: 20px;
@@ -208,17 +172,13 @@ body {
   font-size: 18px;
   font-weight: 400;
   color: #2d3748 !important;
-  outline: none; /* 클릭 시 검은 테두리 제거 */
+  outline: none;
   transition: 0.3s;
 }
-
-/* 입력창 클릭했을 때 효과 */
 .pixel-input:focus {
   border-color: #aab7ec;
   box-shadow: 0 0 0 3px rgba(170, 183, 236, 0.2);
 }
-
-/* 공통 버튼 스타일 (추가, 저장 등) */
 .pixel-btn {
   background: #aab7ec !important;
   color: #fff !important;
@@ -235,23 +195,18 @@ body {
   transition: transform 0.2s;
   min-width: 100px;
 }
-
-/* 버튼 눌렀을 때 살짝 작아지는 효과 */
 .pixel-btn:active {
   transform: scale(0.95);
 }
 
-/* [리스트 아이템] 한 줄 스타일 */
 .item-row {
   width: 100%;
   display: flex;
   align-items: center;
   padding: 18px 5px;
-  border-bottom: 1px solid #f1f5f9; /* 바닥 구분선 */
+  border-bottom: 1px solid #f1f5f9;
   box-sizing: border-box;
 }
-
-/* 리스트 텍스트 */
 .item-row span {
   font-size: 18px;
   color: #4a5568;
@@ -260,8 +215,6 @@ body {
   align-items: center;
   text-align: left;
 }
-
-/* 텍스트 앞의 파란색 점 (Bullet point) */
 .item-row span::before {
   content: "";
   display: inline-block;
@@ -271,16 +224,83 @@ body {
   border-radius: 50%;
   margin-right: 15px;
 }
-
-/* [삭제 버튼] 오른쪽 끝으로 밀기 위한 스타일 */
 .pixel-btn.delete {
-  margin-left: auto !important; /* ★핵심: 왼쪽 여백을 다 써서 오른쪽 끝으로 감 ★ */
+  margin-left: auto !important;
   height: 40px;
   padding: 0 25px;
   font-size: 16px;
   font-weight: 400;
   border-radius: 15px;
-  background: #9fa8da !important; /* 조금 더 진한 색 */
+  background: #9fa8da !important;
   box-shadow: none;
   min-width: auto;
+}
+
+/* ============================================================
+   3. 대시보드 (Home) 전용 스타일 (★여기가 중요!★)
+   ============================================================ */
+.home-container {
+  max-width: 900px;
+  width: 100%;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.dashboard-header h2 {
+  color: #2d3748;
+  font-size: 2.2rem;
+  margin-bottom: 10px;
+  text-shadow: none;
+}
+.date-text {
+  color: #718096;
+  font-size: 1.1rem;
+}
+
+.dashboard-grid {
+  display: flex;
+  gap: 25px;
+  width: 100%;
+  justify-content: center;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 25px;
+  padding: 35px;
+  width: 45%;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(170, 183, 236, 0.15);
+  border: 2px solid #e2e8f0;
+}
+
+/* ★ 수정된 부분 ★ */
+.card h3 {
+  color: #2d3748;
+  font-size: 1.6rem;
+  margin-bottom: 15px;
+
+  /* Flexbox로 한 줄 강제 정렬 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  white-space: nowrap; /* 줄바꿈 절대 금지 */
+  gap: 5px; /* 글자와 아이콘 사이 간격 */
+}
+
+.count-box {
+  font-size: 3.5rem;
+  font-weight: bold;
+  color: #5e72e4;
+  margin: 10px 0;
+}
+.sub-text {
+  color: #718096;
+  font-size: 1rem;
+  margin-bottom: 25px;
 }

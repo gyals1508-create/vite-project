@@ -1,88 +1,226 @@
-import React, { useState } from "react";
-import "../Retro.css"; // 디자인(CSS) 파일 연결 확인 필수!
+import React, { useState, useEffect } from "react";
+import "../Retro.css"; // 디자인 파일 연결
 
 const Meal = () => {
-  // [상태 관리] meals: 식단 리스트 데이터 (초기값: 더미 데이터 3개)
-  // setMeals를 통해 리스트를 추가하거나 삭제함
-  const [meals, setMeals] = useState([
-    { id: 1, text: "닭가슴살 샐러드" },
-    { id: 2, text: "현미밥 반 공기" },
-    { id: 3, text: "아이스 아메리카노" },
-  ]);
-
-  // [상태 관리] inputValue: 현재 입력창에 쓰고 있는 글자
+  // =================================================================
+  // 1. 상태(State) 관리
+  // =================================================================
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [mealType, setMealType] = useState("아침");
   const [inputValue, setInputValue] = useState("");
+  const [meals, setMeals] = useState([]); // 서버에서 받아온 식단 리스트
 
-  // [기능] 식단 추가 (Add)
+  // =================================================================
+  // 2. 백엔드 통신 & 기능 구현
+  // =================================================================
+
+  // [날짜 변환기] "2025-01-03" 형식의 문자열로 변환 (서버가 좋아하는 형식)
+  const getDateStr = (dateObj) => {
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, "0"); // 01월, 02월...
+    const day = String(dateObj.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  // [조회 (READ)] 날짜가 바뀔 때마다 서버에서 데이터 가져오기
+  useEffect(() => {
+    const dateStr = getDateStr(currentDate);
+    // GET 요청: /api/meals?date=2025-01-03
+    fetch(`http://localhost:8080/api/meals?date=${dateStr}`)
+      .then((res) => res.json()) // 서버가 준 데이터를 자바스크립트 객체로 변환
+      .then((data) => {
+        setMeals(data); // 화면에 반영
+      })
+      .catch((err) => console.error("데이터 가져오기 실패:", err));
+  }, [currentDate]);
+
+  // [추가 (CREATE)]
   const addMeal = () => {
-    // 공백만 입력했는지 확인 (빈 값 추가 방지)
     if (inputValue.trim() === "") return;
 
-    // 새 식단 객체 생성 (id는 Date.now()로 고유값 생성)
-    const newMeal = {
-      id: Date.now(),
-      text: inputValue,
+    const dateStr = getDateStr(currentDate);
+    const newMealData = {
+      text: inputValue, // 메뉴 이름
+      mealType: mealType, // 아침/점심...
+      mealDate: dateStr, // 2025-01-03
     };
 
-    // 기존 리스트(...meals)에 새 항목(newMeal)을 붙여서 상태 업데이트
-    setMeals([...meals, newMeal]);
-    setInputValue(""); // 입력창 비우기(초기화)
+    // POST 요청: 데이터 저장해줘!
+    fetch("http://localhost:8080/api/meals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newMealData),
+    })
+      .then((res) => res.json())
+      .then((savedMeal) => {
+        // 서버에 저장된 데이터를 받아서 리스트에 추가 (새로고침 없이 바로 뜸)
+        setMeals([...meals, savedMeal]);
+        setInputValue("");
+      })
+      .catch((err) => console.error("저장 실패:", err));
   };
 
-  // [기능] 식단 삭제 (Delete)
+  // [삭제 (DELETE)]
   const deleteMeal = (id) => {
-    // filter: 클릭한 항목의 id와 '다른' 것들만 남김 (= 해당 id 삭제 효과)
-    setMeals(meals.filter((meal) => meal.id !== id));
+    // DELETE 요청: 이 ID 지워줘!
+    fetch(`http://localhost:8080/api/meals/${id}`, {
+      method: "DELETE",
+    })
+      .then(() => {
+        // 성공하면 화면에서도 삭제
+        setMeals(meals.filter((meal) => meal.id !== id));
+      })
+      .catch((err) => console.error("삭제 실패:", err));
   };
 
-  // [UX] 엔터키 입력 지원 함수
+  // 날짜 변경 (화살표 클릭 시)
+  const changeDate = (days) => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + days);
+    setCurrentDate(newDate);
+  };
+
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      addMeal();
-    }
+    if (e.key === "Enter") addMeal();
   };
 
+  // 화면 표시용 날짜 포맷 (2025년 1월 3일 금요일)
+  const formattedDate = currentDate.toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "long",
+  });
+
+  // =================================================================
+  // 3. 화면 렌더링 (UI)
+  // =================================================================
   return (
-    // pixel-card: Retro.css에 정의된 하얀색 둥근 카드 배경
-    <div className="pixel-card">
-      {/* 제목 영역 */}
-      <h3>🥗 오늘의 식단 기록</h3>
+    <div className="main-content">
+      <div className="pixel-card">
+        <h3>🥗 오늘의 식단 기록</h3>
 
-      {/* 입력창 + 추가 버튼 그룹 */}
-      <div className="input-group">
-        <input
-          className="pixel-input"
-          type="text"
-          placeholder="오늘 먹은 음식을 입력해"
-          value={inputValue} // 입력창의 값과 state 연결 (양방향 바인딩)
-          onChange={(e) => setInputValue(e.target.value)} // 글자 칠 때마다 state 업데이트
-          onKeyPress={handleKeyPress} // 엔터키 누르면 추가됨
-        />
-        <button className="pixel-btn" onClick={addMeal}>
-          추가
-        </button>
-      </div>
+        {/* 날짜 네비게이션 */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "15px",
+            marginTop: "-20px",
+            marginBottom: "25px",
+            color: "#718096",
+            fontSize: "1.1rem",
+          }}
+        >
+          <button
+            onClick={() => changeDate(-1)}
+            style={{
+              background: "none",
+              border: "none",
+              outline: "none",
+              cursor: "pointer",
+              fontSize: "1.2rem",
+              color: "#a0aec0",
+            }}
+          >
+            ◀
+          </button>
+          <span style={{ fontWeight: "bold", color: "#4a5568" }}>
+            {formattedDate}
+          </span>
+          <button
+            onClick={() => changeDate(1)}
+            style={{
+              background: "none",
+              border: "none",
+              outline: "none",
+              cursor: "pointer",
+              fontSize: "1.2rem",
+              color: "#a0aec0",
+            }}
+          >
+            ▶
+          </button>
+        </div>
 
-      {/* ★ 핵심: 리스트 정렬을 위한 컨테이너 (width 100% 필수) ★ 
-          이 div가 없으면 리스트 내용물이 가운데로 뭉칠 수 있음 */}
-      <div style={{ width: "100%", display: "flex", flexDirection: "column" }}>
-        {/* map 함수: meals 배열을 돌면서 화면에 리스트를 그리기 */}
-        {meals.map((meal) => (
-          // key: 리액트가 리스트 아이템을 구분하기 위한 고유값 (필수 설정)
-          // item-row: 한 줄에 글자와 삭제버튼을 양옆으로 배치하는 CSS 클래스
-          <div className="item-row" key={meal.id}>
-            {/* 음식 이름 (CSS에 의해 왼쪽 정렬됨) */}
-            <span>{meal.text}</span>
-
-            {/* 삭제 버튼 (CSS에 의해 오른쪽 끝 정렬됨) */}
+        {/* 카테고리 버튼 */}
+        <div
+          style={{
+            marginBottom: "15px",
+            display: "flex",
+            gap: "8px",
+            flexWrap: "wrap",
+          }}
+        >
+          {["아침", "점심", "저녁", "간식"].map((type) => (
             <button
-              className="pixel-btn delete" // delete 클래스로 크기와 색상 조절
-              onClick={() => deleteMeal(meal.id)} // 클릭 시 해당 id 삭제 함수 실행
+              key={type}
+              onClick={() => setMealType(type)}
+              style={{
+                padding: "8px 16px",
+                borderRadius: "15px",
+                border: "none",
+                outline: "none",
+                background: mealType === type ? "#5e72e4" : "#edf2f7",
+                color: mealType === type ? "#fff" : "#4a5568",
+                cursor: "pointer",
+                fontFamily: "Jua",
+                transition: "0.2s",
+              }}
             >
-              삭제
+              {type}
             </button>
-          </div>
-        ))}
+          ))}
+        </div>
+
+        {/* 입력창 */}
+        <div className="input-group">
+          <input
+            className="pixel-input"
+            type="text"
+            placeholder={
+              mealType === "간식"
+                ? "간식으로 먹은 음식을 적어 주세요!"
+                : `${mealType}에 먹은 음식을 적어 주세요!`
+            }
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyPress={handleKeyPress}
+          />
+          <button className="pixel-btn" onClick={addMeal}>
+            추가
+          </button>
+        </div>
+
+        {/* 리스트 */}
+        <div
+          style={{ width: "100%", display: "flex", flexDirection: "column" }}
+        >
+          {meals.length === 0 ? (
+            <p style={{ color: "#cbd5e0", marginTop: "20px" }}>
+              아직 기록된 식단이 없어!
+            </p>
+          ) : (
+            meals.map((meal) => (
+              <div className="item-row" key={meal.id}>
+                <span style={{ display: "flex", alignItems: "center" }}>
+                  {/* DB에서 가져온 mealType과 text 표시 */}
+                  <strong style={{ color: "#5e72e4", marginRight: "8px" }}>
+                    [{meal.mealType}]
+                  </strong>
+                  {meal.text}
+                </span>
+                <button
+                  className="pixel-btn delete"
+                  onClick={() => deleteMeal(meal.id)}
+                >
+                  삭제
+                </button>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

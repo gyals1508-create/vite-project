@@ -1,60 +1,145 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios"; // 서버와 통신하기 위한 도구 (데이터 가져올 때 씀)
-import { useNavigate } from "react-router-dom"; // 페이지 이동을 도와주는 훅
-import "../Retro.css"; // 공통 디자인 파일 연결 (배경, 버튼 스타일 등)
+import { Link } from "react-router-dom";
+import "../Retro.css";
 
 const Home = () => {
-  // [상태 관리] count: 식단 기록 개수를 저장하는 변수 (초기값 0)
-  const [count, setCount] = useState(0);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-  // [페이지 이동] navigate: 버튼 클릭 시 다른 주소로 보내주는 함수
-  const navigate = useNavigate();
+  // 식단 & 장보기 데이터를 모두 관리
+  const [dashboardData, setDashboardData] = useState({
+    mealCount: 0,
+    recentMenu: "기록 없음",
+    shoppingCount: 0, // 장보기 개수 추가
+    shoppingMsg: "장바구니가 비었어요!",
+  });
 
-  // [데이터 요청] 컴포넌트가 처음 화면에 뜰 때 딱 한 번 실행됨
+  const getDateStr = (dateObj) => {
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const day = String(dateObj.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   useEffect(() => {
-    axios
-      .get("http://localhost:8080/api/meals") // 1. 서버에 식단 목록 요청
-      .then((res) => setCount(res.data.length)); // 2. 받아온 데이터의 개수(length)를 count에 저장
-  }, []); // [] : 의존성 배열이 비어있으므로 처음 한 번만 실행
+    const dateStr = getDateStr(currentDate);
+
+    // 1. 식단 데이터 가져오기
+    const fetchMeals = fetch(
+      `http://localhost:8080/api/meals?date=${dateStr}`
+    ).then((res) => res.json());
+    // 2. 장보기 데이터 가져오기
+    const fetchShopping = fetch(
+      `http://localhost:8080/api/shopping?date=${dateStr}`
+    ).then((res) => res.json());
+
+    // 두 데이터를 모두 기다렸다가(Promise.all) 화면 업데이트
+    Promise.all([fetchMeals, fetchShopping])
+      .then(([meals, shoppingItems]) => {
+        // 안 산 물건 개수 세기 (isBought가 false인 것만)
+        const toBuyCount = shoppingItems.filter(
+          (item) => !item.isBought
+        ).length;
+
+        setDashboardData({
+          mealCount: meals.length,
+          recentMenu:
+            meals.length > 0 ? meals[meals.length - 1].text : "기록 없음",
+          shoppingCount: toBuyCount,
+          shoppingMsg:
+            toBuyCount > 0 ? "사야 할 물건이 있어요!" : "모두 구매 완료!",
+        });
+      })
+      .catch((err) => console.error("데이터 로딩 실패:", err));
+  }, [currentDate]);
+
+  const changeDate = (days) => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + days);
+    setCurrentDate(newDate);
+  };
+
+  const formattedDate = currentDate.toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "long",
+  });
 
   return (
-    // pixel-card: Retro.css에 정의된 하얀색 둥근 카드 스타일
-    <div className="pixel-card" style={{ textAlign: "center" }}>
-      {/* 제목 영역: 인라인 스타일로 아래 여백(margin) 조정 */}
-      <h2 style={{ marginBottom: "30px" }}>🏠 HOME DASHBOARD</h2>
-
-      {/* 식단 개수를 보여주는 점선 박스 영역 */}
-      <div
-        style={{
-          marginBottom: "30px",
-          padding: "10px",
-          background: "#f9f9f9",
-          border: "2px dashed #000", // 점선 테두리 포인트
-        }}
-      >
-        <p
+    <div className="home-container">
+      <header className="dashboard-header">
+        <h2>ㅇㅇ님, 안녕하세요! 👋</h2>
+        <div
           style={{
-            fontSize: "20px", // 글씨 크기 약간 키움
-            color: "#000000", // 완전 검은색
-            fontWeight: "bold", // 두껍게 강조
-            marginBottom: "10px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "15px",
+            marginTop: "10px",
+            color: "#718096",
+            fontSize: "1.1rem",
           }}
         >
-          오늘의 식단 기록
-        </p>
+          <button
+            onClick={() => changeDate(-1)}
+            style={{
+              background: "none",
+              border: "none",
+              outline: "none",
+              cursor: "pointer",
+              fontSize: "1.2rem",
+              color: "#a0aec0",
+            }}
+          >
+            ◀
+          </button>
+          <span style={{ fontWeight: "bold", color: "#4a5568" }}>
+            {formattedDate}
+          </span>
+          <button
+            onClick={() => changeDate(1)}
+            style={{
+              background: "none",
+              border: "none",
+              outline: "none",
+              cursor: "pointer",
+              fontSize: "1.2rem",
+              color: "#a0aec0",
+            }}
+          >
+            ▶
+          </button>
+        </div>
+      </header>
 
-        {/* 실제 개수(count)가 표시되는 부분 (색상 강조) */}
-        <h1 style={{ color: "#6c5ce7", fontSize: "48px" }}>{count}</h1>
+      <div className="dashboard-grid">
+        {/* 식단 카드 */}
+        <div className="card">
+          <h3>
+            <span>오늘의 식단</span>
+            <span>🍚</span>
+          </h3>
+          <div className="count-box">{dashboardData.mealCount}</div>
+          <p className="sub-text">최근 메뉴: {dashboardData.recentMenu}</p>
+          <Link to="/meal">
+            <button>기록하러 가기</button>
+          </Link>
+        </div>
+
+        {/* 장보기 카드 */}
+        <div className="card">
+          <h3>
+            <span>장보기 목록</span>
+            <span>🛒</span>
+          </h3>
+          {/* 안 산 물건 개수 표시 */}
+          <div className="count-box">{dashboardData.shoppingCount}</div>
+          <p className="sub-text">{dashboardData.shoppingMsg}</p>
+          <Link to="/shopping">
+            <button>장바구니 확인</button>
+          </Link>
+        </div>
       </div>
-
-      {/* 페이지 이동 버튼 */}
-      <button
-        className="pixel-btn" // Retro.css의 버튼 스타일 적용
-        onClick={() => navigate("/meal")} // 클릭 시 '/meal' 주소로 이동
-        style={{ width: "100%", background: "#ffde59" }} // 노란색 배경 덮어쓰기
-      >
-        식단 관리 페이지로 GO!
-      </button>
     </div>
   );
 };
