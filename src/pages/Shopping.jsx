@@ -10,6 +10,9 @@ const Shopping = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [items, setItems] = useState([]);
   const [inputValue, setInputValue] = useState("");
+  const [searchError, setSearchError] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchTarget, setSearchTarget] = useState("");
 
   const getDateStr = (dateObj) => {
     if (!dateObj) return null;
@@ -23,6 +26,9 @@ const Shopping = () => {
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() + days);
     setCurrentDate(newDate);
+    setSearchError("");
+    setSearchResults([]);
+    setSearchTarget("");
   };
 
   const CustomInput = React.forwardRef(({ value, onClick }, ref) => (
@@ -57,27 +63,78 @@ const Shopping = () => {
       .catch((err) => console.error("로드 실패:", err));
   }, [currentDate]);
 
+  // ★ 10초 동안 계속 깜빡이는 함수
+  const handleMoveToDate = (dateStr, text) => {
+    setCurrentDate(new Date(dateStr));
+    setTimeout(() => {
+      setSearchTarget(text);
+      // 10초 후에 깜빡임 강제 종료
+      setTimeout(() => setSearchTarget(""), 10000);
+    }, 300);
+  };
+
+  const handleSearch = () => {
+    if (!inputValue.trim()) return;
+    fetch(`http://localhost:8080/api/shopping/search?text=${inputValue}`)
+      .then((res) => res.json())
+      .then((data) => {
+        const results = data
+          .filter((i) => i.isBought && i.shoppingDate)
+          .sort((a, b) => new Date(b.shoppingDate) - new Date(a.shoppingDate));
+
+        if (results.length > 0) {
+          setSearchResults(results);
+          handleMoveToDate(results[0].shoppingDate, results[0].text);
+          setSearchError("");
+        } else {
+          setSearchError("구매 내역을 찾을 수 없습니다.");
+          setSearchResults([]);
+          setSearchTarget("");
+        }
+      });
+  };
+
   const addItemWithText = (text) => {
     if (!text || text.trim() === "") return;
-    const existingItem = items.find((i) => i.text === text && !i.isBought);
+    const dateStr = getDateStr(currentDate);
+    const existingInToday = items.find(
+      (i) => i.text === text && i.shoppingDate === dateStr
+    );
+    const favoriteItem = items.find((i) => i.text === text && i.isFavorite);
 
-    if (existingItem) {
+    if (existingInToday) {
       const updatedItem = {
-        ...existingItem,
-        count: (existingItem.count || 1) + 1,
+        ...existingInToday,
+        count: (existingInToday.count || 1) + 1,
       };
-      fetch(`http://localhost:8080/api/shopping/${existingItem.id}`, {
+      fetch(`http://localhost:8080/api/shopping/${existingInToday.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedItem),
       }).then(() =>
-        setItems(items.map((i) => (i.id === existingItem.id ? updatedItem : i)))
+        setItems(
+          items.map((i) => (i.id === existingInToday.id ? updatedItem : i))
+        )
+      );
+    } else if (favoriteItem) {
+      const updatedItem = {
+        ...favoriteItem,
+        shoppingDate: dateStr,
+        isBought: false,
+        count: 1,
+      };
+      fetch(`http://localhost:8080/api/shopping/${favoriteItem.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedItem),
+      }).then(() =>
+        setItems(items.map((i) => (i.id === favoriteItem.id ? updatedItem : i)))
       );
     } else {
       const newItem = {
         text,
         isBought: false,
-        shoppingDate: getDateStr(currentDate),
+        shoppingDate: dateStr,
         isFavorite: false,
         count: 1,
       };
@@ -90,6 +147,7 @@ const Shopping = () => {
         .then((savedItem) => {
           setItems([...items, { ...savedItem, count: 1 }]);
           setInputValue("");
+          setSearchError("");
         });
     }
   };
@@ -128,7 +186,9 @@ const Shopping = () => {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedItem),
-      }).then(() => setItems(items.filter((i) => i.id !== item.id)));
+      }).then(() =>
+        setItems(items.map((i) => (i.id === item.id ? updatedItem : i)))
+      );
     } else {
       fetch(`http://localhost:8080/api/shopping/${item.id}`, {
         method: "DELETE",
@@ -152,7 +212,14 @@ const Shopping = () => {
         justifyContent: "center",
       }}
     >
-      <style>{`.no-dot::before { content: none !important; }`}</style>
+      {/* ★ 계속 반짝이는 애니메이션 수정 */}
+      <style>{`
+        @keyframes highlightBlink {
+          0%, 100% { background-color: transparent; }
+          50% { background-color: #fff9c4; transform: scale(1.01); }
+        }
+        .no-dot::before { content: none !important; }
+      `}</style>
 
       <div className="pixel-card" style={{ flex: 1.5, minWidth: "0" }}>
         <h3>오늘의 장바구니🛍️</h3>
@@ -174,6 +241,8 @@ const Shopping = () => {
               cursor: "pointer",
               color: "#5e72e4",
               fontSize: "1.2rem",
+              outline: "none",
+              boxShadow: "none",
             }}
           >
             ◀
@@ -193,27 +262,103 @@ const Shopping = () => {
               cursor: "pointer",
               color: "#5e72e4",
               fontSize: "1.2rem",
+              outline: "none",
+              boxShadow: "none",
             }}
           >
             ▶
           </button>
         </div>
-        <div className="input-group">
+        <div
+          className="input-group"
+          style={{
+            display: "flex",
+            gap: "10px",
+            marginBottom:
+              searchError || searchResults.length > 1 ? "5px" : "20px",
+          }}
+        >
           <input
             className="pixel-input"
             type="text"
             placeholder="구매할 물건 입력..."
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              setSearchError("");
+              setSearchResults([]);
+            }}
             onKeyPress={(e) => e.key === "Enter" && addItemWithText(inputValue)}
+            style={{ outline: "none", flex: 1 }}
           />
           <button
             className="pixel-btn"
+            onClick={handleSearch}
+            style={{
+              outline: "none",
+              border: "none",
+              boxShadow: "none",
+              background: "#5e72e4",
+            }}
+          >
+            검색
+          </button>
+          <button
+            className="pixel-btn"
             onClick={() => addItemWithText(inputValue)}
+            style={{ outline: "none", border: "none", boxShadow: "none" }}
           >
             추가
           </button>
         </div>
+
+        {searchResults.length > 1 && (
+          <div
+            style={{
+              marginBottom: "15px",
+              padding: "10px",
+              background: "#f8f9fa",
+              borderRadius: "10px",
+              fontSize: "0.85rem",
+            }}
+          >
+            <span style={{ color: "#718096", marginRight: "10px" }}>
+              여러 번 구매했네요! 이동할 날짜 선택:
+            </span>
+            {searchResults.map((res, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleMoveToDate(res.shoppingDate, res.text)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#5e72e4",
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                  marginRight: "8px",
+                  outline: "none",
+                }}
+              >
+                {res.shoppingDate}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {searchError && (
+          <div
+            style={{
+              color: "#f56565",
+              fontSize: "0.85rem",
+              marginBottom: "15px",
+              marginLeft: "5px",
+              fontWeight: "bold",
+            }}
+          >
+            ⚠️ {searchError}
+          </div>
+        )}
+
         <div style={{ width: "100%" }}>
           {items.filter((i) => i.shoppingDate === getDateStr(currentDate))
             .length === 0 ? (
@@ -231,6 +376,13 @@ const Shopping = () => {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    // ★ 0.8초 주기로 계속 반짝임 (10초간 상태 유지)
+                    animation:
+                      searchTarget === item.text
+                        ? "highlightBlink 0.8s infinite"
+                        : "none",
+                    borderRadius: "10px",
+                    padding: "5px 10px",
                   }}
                 >
                   <div
@@ -247,6 +399,7 @@ const Shopping = () => {
                         cursor: "pointer",
                         fontSize: "1.3rem",
                         color: item.isFavorite ? "#fbc02d" : "#cbd5e0",
+                        outline: "none",
                       }}
                     >
                       {item.isFavorite ? "★" : "☆"}
@@ -262,11 +415,7 @@ const Shopping = () => {
                       {item.count > 1 && (
                         <span
                           className="no-dot"
-                          style={{
-                            marginLeft: "8px",
-                            color: "#5e72e4",
-                            fontWeight: "bold",
-                          }}
+                          style={{ color: "#5e72e4", fontWeight: "bold" }}
                         >
                           {item.count}개
                         </span>
@@ -292,15 +441,23 @@ const Shopping = () => {
                           borderRadius: "15px",
                           cursor: "pointer",
                           fontFamily: "Jua",
+                          outline: "none",
+                          boxShadow: "none",
                         }}
                       >
-                        구매완료
+                        구매확정
                       </button>
                     )}
                     <button
                       className="pixel-btn delete"
                       onClick={() => handleDelete(item)}
-                      style={{ padding: "0 15px", height: "40px" }}
+                      style={{
+                        padding: "0 25px",
+                        height: "41px",
+                        outline: "none",
+                        border: "none",
+                        boxShadow: "none",
+                      }}
                     >
                       삭제
                     </button>
@@ -323,9 +480,7 @@ const Shopping = () => {
           justifyContent: "flex-start",
         }}
       >
-        <h3 style={{ fontSize: "1.3rem", marginBottom: "15px" }}>
-          ⭐ 자주 사는 품목
-        </h3>
+        <h3>⭐ 자주 사는 품목</h3>
         {uniqueFavorites.length === 0 ? (
           <p
             style={{
@@ -362,6 +517,7 @@ const Shopping = () => {
                     display: "flex",
                     alignItems: "center",
                     gap: "10px",
+                    outline: "none",
                   }}
                 >
                   <span className="no-dot" style={{ color: "#fbc02d" }}>
@@ -378,6 +534,8 @@ const Shopping = () => {
                     cursor: "pointer",
                     fontSize: "1.1rem",
                     padding: "0 5px",
+                    outline: "none",
+                    boxShadow: "none",
                   }}
                 >
                   ✕
