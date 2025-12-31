@@ -62,19 +62,31 @@ const Home = () => {
         const expense = txs
           .filter((t) => t.txType === "EXPENSE")
           .reduce((sum, t) => sum + t.amount, 0);
-        const sortedShopping = [...shopping].sort(
-          (a, b) => a.isBought - b.isBought
-        );
         setDashboardData({
           meals,
-          shoppingItems: sortedShopping,
+          shoppingItems: shopping,
           todos,
           income,
           expense,
         });
       })
-      .catch((err) => console.error("데이터 로딩 실패:", err));
+      .catch((err) => console.error("로딩 실패", err));
   }, [currentDate]);
+
+  const totalCalories = dashboardData.meals.reduce(
+    (sum, m) => sum + (Number(m.calories) || 0),
+    0
+  );
+  const btnStyle = {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    color: "#5e72e4",
+    fontSize: "1.5rem",
+    outline: "none",
+    boxShadow: "none",
+    padding: "0 10px",
+  };
 
   return (
     <div
@@ -87,27 +99,20 @@ const Home = () => {
         flexDirection: "column",
         alignItems: "center",
         marginTop: "-40px",
-        padding: "0 15px",
       }}
     >
-      <header
-        style={{ marginBottom: "50px", textAlign: "center", width: "100%" }}
-      >
+      <header style={{ marginBottom: "50px", textAlign: "center" }}>
         <h2
-          style={{
-            fontSize: "clamp(1.5rem, 5vw, 2.5rem)",
-            color: "#2d3748",
-            marginBottom: "15px",
-          }}
+          style={{ fontSize: "2.5rem", color: "#2d3748", marginBottom: "15px" }}
         >
-          🫧 POCKET DASHBOARD
+          👛 POCKET DASHBOARD
         </h2>
+        {/* 화살표 정렬 보정 영역 */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: "20px",
           }}
         >
           <button
@@ -116,14 +121,7 @@ const Home = () => {
                 new Date(currentDate.setDate(currentDate.getDate() - 1))
               )
             }
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "#5e72e4",
-              fontSize: "1.5rem",
-              outline: "none",
-            }}
+            style={btnStyle}
           >
             ◀
           </button>
@@ -140,28 +138,17 @@ const Home = () => {
                 new Date(currentDate.setDate(currentDate.getDate() + 1))
               )
             }
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "#5e72e4",
-              fontSize: "1.5rem",
-              outline: "none",
-            }}
+            style={btnStyle}
           >
             ▶
           </button>
         </div>
       </header>
-
-      {/* 대시보드 카드 그리드 (반응형 wrap 적용) */}
       <div
         style={{
           display: "flex",
-          flexDirection: "row",
-          flexWrap: "wrap", // ★ 공간 좁으면 아래로 줄바꿈
+          flexWrap: "wrap",
           gap: "25px",
-          width: "100%",
           justifyContent: "center",
           paddingBottom: "40px",
         }}
@@ -180,9 +167,10 @@ const Home = () => {
           linkTo="/meal"
           btnText="기록하러 가기"
           isMeal={true}
+          totalCalories={totalCalories}
         />
         <DashboardCard
-          title="장바구니 🧺"
+          title="장바구니 🛍️"
           list={dashboardData.shoppingItems}
           emptyMsg="구매 목록이 비어있어요!"
           linkTo="/shopping"
@@ -201,5 +189,4 @@ const Home = () => {
     </div>
   );
 };
-
 export default Home;

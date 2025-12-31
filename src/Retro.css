@@ -181,7 +181,7 @@ body {
   background: #aab7ec !important;
   color: #fff !important;
   border: none;
-  border-radius: 25px;
+  border-radius: 17.5px;
   padding: 0 40px;
   cursor: pointer;
   font-family: "Jua", sans-serif;
@@ -191,7 +191,7 @@ body {
   box-shadow: 0 8px 20px rgba(170, 183, 236, 0.4);
   white-space: nowrap;
   transition: transform 0.2s;
-  min-width: 100px;
+  min-width: 0px;
 }
 .pixel-btn:active {
   transform: scale(0.95);
@@ -214,13 +214,14 @@ body {
   text-align: left;
 }
 .item-row span::before {
-  content: "";
+  content: "•"; /* 또는 공통 기호 */
+  margin-right: 10px;
+  color: #aab7ec;
   display: inline-block;
-  width: 8px;
-  height: 8px;
-  background-color: #aab7ec;
-  border-radius: 50%;
-  margin-right: 15px;
+}
+/* 칼로리 내부의 추가 기호 발생 방지 */
+.item-row span span::before {
+  content: none !important;
 }
 .pixel-btn.delete {
   margin-left: auto !important;
