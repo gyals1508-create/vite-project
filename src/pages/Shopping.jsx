@@ -480,7 +480,7 @@ const Shopping = () => {
           justifyContent: "flex-start",
         }}
       >
-        <h3>⭐ 자주 사는 품목</h3>
+        <h3>⭐ 즐겨찾기</h3>
         {uniqueFavorites.length === 0 ? (
           <p
             style={{
