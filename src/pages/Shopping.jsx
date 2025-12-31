@@ -1,247 +1,395 @@
 import React, { useState, useEffect } from "react";
+import DatePicker, { registerLocale } from "react-datepicker";
+import { ko } from "date-fns/locale";
+import "react-datepicker/dist/react-datepicker.css";
 import "../Retro.css";
 
-/**
- * [Shopping 컴포넌트]
- * 장보기 리스트를 관리하는 페이지야.
- * 필요한 물건을 추가(Create), 조회(Read), 수정(Update - 구매체크), 삭제(Delete)할 수 있어.
- */
-const Shopping = () => {
-  // =================================================================
-  // 1. [상태 관리] React가 기억하는 변수들 (State)
-  // =================================================================
-  const [currentDate, setCurrentDate] = useState(new Date()); // 현재 날짜
-  const [items, setItems] = useState([]); // 장보기 목록 데이터
-  const [inputValue, setInputValue] = useState(""); // 입력창 내용
+registerLocale("ko", ko);
 
-  // =================================================================
-  // 2. [도구 함수] 날짜 변환기
-  // =================================================================
+const Shopping = () => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [items, setItems] = useState([]);
+  const [inputValue, setInputValue] = useState("");
+
   const getDateStr = (dateObj) => {
+    if (!dateObj) return null;
     const year = dateObj.getFullYear();
     const month = String(dateObj.getMonth() + 1).padStart(2, "0");
     const day = String(dateObj.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   };
 
-  // =================================================================
-  // 3. [서버 통신] 백엔드와 데이터 주고받기
-  // =================================================================
-
-  // [조회] 날짜가 바뀌면 목록 새로 가져오기
-  useEffect(() => {
-    const dateStr = getDateStr(currentDate);
-    fetch(`http://localhost:8080/api/shopping?date=${dateStr}`)
-      .then((res) => res.json())
-      .then((data) => setItems(data))
-      .catch((err) => console.error("로드 실패:", err));
-  }, [currentDate]);
-
-  // [추가] "추가" 버튼 누르면 실행
-  const addItem = () => {
-    if (inputValue.trim() === "") return; // 빈 칸 방지
-
-    const newItem = {
-      text: inputValue,
-      isBought: false,
-      shoppingDate: getDateStr(currentDate),
-    };
-
-    fetch("http://localhost:8080/api/shopping", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newItem),
-    })
-      .then((res) => res.json())
-      .then((savedItem) => {
-        setItems([...items, savedItem]); // 목록에 추가
-        setInputValue(""); // 입력창 초기화
-      });
-  };
-
-  // [수정] "구매완료" 버튼 누르면 실행 (상태 변경)
-  const markAsBought = (item) => {
-    const updatedItem = { ...item, isBought: true };
-
-    fetch(`http://localhost:8080/api/shopping/${item.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updatedItem),
-    }).then(() => {
-      // id가 같은 것만 찾아서 교체 (map 사용)
-      setItems(items.map((i) => (i.id === item.id ? updatedItem : i)));
-    });
-  };
-
-  // [삭제] "삭제" 버튼 누르면 실행
-  const deleteItem = (id) => {
-    fetch(`http://localhost:8080/api/shopping/${id}`, {
-      method: "DELETE",
-    }).then(() => setItems(items.filter((item) => item.id !== id)));
-  };
-
-  // =================================================================
-  // 4. [이벤트 핸들러] 날짜 이동 및 키보드 입력
-  // =================================================================
   const changeDate = (days) => {
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() + days);
     setCurrentDate(newDate);
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") addItem();
+  const CustomInput = React.forwardRef(({ value, onClick }, ref) => (
+    <span
+      onClick={onClick}
+      ref={ref}
+      style={{
+        fontWeight: "bold",
+        color: "#4a5568",
+        cursor: "pointer",
+        fontSize: "1.1rem",
+        outline: "none",
+      }}
+    >
+      {value} 📅
+    </span>
+  ));
+
+  // 날짜 변경 시 데이터를 가져오되, 즐겨찾기 목록 구성을 위해 전체 데이터를 관리하는 흐름으로 유지
+  useEffect(() => {
+    const dateStr = getDateStr(currentDate);
+    fetch(`http://localhost:8080/api/shopping?date=${dateStr}`)
+      .then((res) => res.json())
+      .then((data) =>
+        setItems(
+          data.map((i) => ({
+            ...i,
+            isFavorite: i.isFavorite || false,
+            count: i.count || 1,
+          }))
+        )
+      )
+      .catch((err) => console.error("로드 실패:", err));
+  }, [currentDate]);
+
+  const addItemWithText = (text) => {
+    if (!text || text.trim() === "") return;
+    const existingItem = items.find(
+      (i) =>
+        i.text === text &&
+        !i.isBought &&
+        i.shoppingDate === getDateStr(currentDate)
+    );
+
+    if (existingItem) {
+      const updatedItem = {
+        ...existingItem,
+        count: (existingItem.count || 1) + 1,
+      };
+      fetch(`http://localhost:8080/api/shopping/${existingItem.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedItem),
+      }).then(() =>
+        setItems(items.map((i) => (i.id === existingItem.id ? updatedItem : i)))
+      );
+    } else {
+      const newItem = {
+        text,
+        isBought: false,
+        shoppingDate: getDateStr(currentDate),
+        isFavorite: false,
+        count: 1,
+      };
+      fetch("http://localhost:8080/api/shopping", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newItem),
+      })
+        .then((res) => res.json())
+        .then((savedItem) => {
+          setItems([...items, { ...savedItem, count: 1 }]);
+          setInputValue("");
+        });
+    }
   };
 
-  // ★ 이미 한글로 잘 나오도록 설정되어 있어! ("2025년 12월 30일 화요일")
-  const formattedDate = currentDate.toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "long",
-  });
+  const markAsBought = (item) => {
+    const updatedItem = { ...item, isBought: true };
+    fetch(`http://localhost:8080/api/shopping/${item.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedItem),
+    }).then(() =>
+      setItems(items.map((i) => (i.id === item.id ? updatedItem : i)))
+    );
+  };
 
-  // =================================================================
-  // 5. [화면 렌더링] UI 그리기
-  // =================================================================
+  const toggleFavorite = (item) => {
+    const updatedItem = { ...item, isFavorite: !item.isFavorite };
+    fetch(`http://localhost:8080/api/shopping/${item.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedItem),
+    }).then(() =>
+      setItems(items.map((i) => (i.id === item.id ? updatedItem : i)))
+    );
+  };
+
+  // ★ 수정된 삭제 로직: 즐겨찾기면 날짜만 비우고, 아니면 완전 삭제
+  const handleDelete = (item) => {
+    if (item.isFavorite) {
+      const updatedItem = {
+        ...item,
+        shoppingDate: null,
+        isBought: false,
+        count: 1,
+      };
+      fetch(`http://localhost:8080/api/shopping/${item.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedItem),
+      }).then(() => setItems(items.filter((i) => i.id !== item.id)));
+    } else {
+      fetch(`http://localhost:8080/api/shopping/${item.id}`, {
+        method: "DELETE",
+      }).then(() => setItems(items.filter((i) => i.id !== item.id)));
+    }
+  };
+
+  const uniqueFavorites = Array.from(
+    new Set(items.filter((i) => i.isFavorite).map((i) => i.text))
+  ).map((text) => items.find((i) => i.text === text && i.isFavorite));
+
   return (
-    <div className="pixel-card">
-      <h3>🛒 장보기 리스트</h3>
-
-      {/* 날짜 네비게이션 */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "15px",
-          marginTop: "-20px",
-          marginBottom: "25px",
-          color: "#718096",
-          fontSize: "1.1rem",
-        }}
-      >
-        <button
-          onClick={() => changeDate(-1)}
+    <div
+      className="main-content"
+      style={{
+        display: "flex",
+        gap: "25px",
+        alignItems: "flex-start",
+        maxWidth: "1200px",
+        margin: "100px auto 0",
+        justifyContent: "center",
+      }}
+    >
+      <style>{`.no-dot::before { content: none !important; }`}</style>
+      <div className="pixel-card" style={{ flex: 1.5, minWidth: "0" }}>
+        <h3>오늘의 장바구니🛍️</h3>
+        <div
           style={{
-            background: "none",
-            border: "none",
-            outline: "none", // ★ 테두리 제거
-            cursor: "pointer",
-            fontSize: "1.2rem",
-            color: "#a0aec0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "15px",
+            marginTop: "-20px",
+            marginBottom: "25px",
           }}
         >
-          ◀
-        </button>
-        <span style={{ fontWeight: "bold", color: "#4a5568" }}>
-          {formattedDate}
-        </span>
-        <button
-          onClick={() => changeDate(1)}
-          style={{
-            background: "none",
-            border: "none",
-            outline: "none", // ★ 테두리 제거
-            cursor: "pointer",
-            fontSize: "1.2rem",
-            color: "#a0aec0",
-          }}
-        >
-          ▶
-        </button>
-      </div>
-
-      {/* 입력창 & 추가 버튼 */}
-      <div className="input-group">
-        <input
-          className="pixel-input"
-          type="text"
-          placeholder="여기에 구매할 물건을 입력해주세요!"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyPress={handleKeyPress}
-        />
-        <button
-          className="pixel-btn"
-          onClick={addItem}
-          style={{ border: "none", outline: "none" }} // ★ 테두리 제거
-        >
-          추가
-        </button>
-      </div>
-
-      {/* 리스트 출력 */}
-      <div style={{ width: "100%", display: "flex", flexDirection: "column" }}>
-        {items.length === 0 ? (
-          <p
-            style={{ color: "#cbd5e0", marginTop: "20px", textAlign: "center" }}
+          <button
+            onClick={() => changeDate(-1)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "#5e72e4",
+              fontSize: "1.2rem",
+            }}
           >
-            장볼 목록이 텅 비었어요!
-          </p>
-        ) : (
-          items.map((item) => (
-            <div className="item-row" key={item.id}>
-              {/* 물건 이름 (구매 완료 시 취소선) */}
-              <span
-                style={{
-                  textDecoration: item.isBought ? "line-through" : "none",
-                  color: item.isBought ? "#cbd5e0" : "#4a5568",
-                }}
-              >
-                {item.text}
-              </span>
-
-              {/* 버튼 그룹 */}
-              <div
-                style={{
-                  marginLeft: "auto",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                }}
-              >
-                {item.isBought ? (
+            ◀
+          </button>
+          <DatePicker
+            locale="ko"
+            selected={currentDate}
+            onChange={(date) => setCurrentDate(date)}
+            dateFormat="yyyy년 MM월 dd일 eeee"
+            customInput={<CustomInput />}
+          />
+          <button
+            onClick={() => changeDate(1)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "#5e72e4",
+              fontSize: "1.2rem",
+            }}
+          >
+            ▶
+          </button>
+        </div>
+        <div className="input-group">
+          <input
+            className="pixel-input"
+            type="text"
+            placeholder="구매할 물건 입력..."
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && addItemWithText(inputValue)}
+          />
+          <button
+            className="pixel-btn"
+            onClick={() => addItemWithText(inputValue)}
+          >
+            추가
+          </button>
+        </div>
+        <div style={{ width: "100%" }}>
+          {items.filter((i) => i.shoppingDate === getDateStr(currentDate))
+            .length === 0 ? (
+            <p style={{ color: "#cbd5e0", textAlign: "center" }}>
+              목록이 비었어요!
+            </p>
+          ) : (
+            items
+              .filter((i) => i.shoppingDate === getDateStr(currentDate))
+              .map((item) => (
+                <div
+                  className="item-row"
+                  key={item.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
                   <div
                     style={{
-                      color: "#48bb78",
-                      fontWeight: "bold",
-                      fontSize: "1.2rem",
-                      marginRight: "10px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
                     }}
                   >
-                    구매완료!
+                    <span
+                      onClick={() => toggleFavorite(item)}
+                      className="no-dot"
+                      style={{
+                        cursor: "pointer",
+                        fontSize: "1.3rem",
+                        color: item.isFavorite ? "#fbc02d" : "#cbd5e0",
+                      }}
+                    >
+                      {item.isFavorite ? "★" : "☆"}
+                    </span>
+                    <span
+                      className="no-dot"
+                      style={{
+                        textDecoration: item.isBought ? "line-through" : "none",
+                        color: item.isBought ? "#cbd5e0" : "#4a5568",
+                      }}
+                    >
+                      {item.text}{" "}
+                      {item.count > 1 && (
+                        <span
+                          className="no-dot"
+                          style={{
+                            marginLeft: "8px",
+                            color: "#5e72e4",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {item.count}개
+                        </span>
+                      )}
+                    </span>
                   </div>
-                ) : (
-                  <button
-                    onClick={() => markAsBought(item)}
-                    style={{
-                      background: "#48bb78",
-                      color: "#fff",
-                      border: "none",
-                      outline: "none", // ★ 테두리 제거
-                      height: "40px",
-                      padding: "0 25px",
-                      borderRadius: "15px",
-                      fontSize: "16px",
-                      cursor: "pointer",
-                      fontFamily: "Jua",
-                    }}
-                  >
-                    구매완료
-                  </button>
-                )}
-
-                <button
-                  className="pixel-btn delete"
-                  onClick={() => deleteItem(item.id)}
-                  style={{ border: "none", outline: "none" }} // ★ 테두리 제거
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    {item.isBought ? (
+                      <span
+                        className="no-dot"
+                        style={{ color: "#48bb78", fontWeight: "bold" }}
+                      >
+                        구매완료!
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => markAsBought(item)}
+                        style={{
+                          background: "#48bb78",
+                          color: "#fff",
+                          border: "none",
+                          padding: "8px 12px",
+                          borderRadius: "15px",
+                          cursor: "pointer",
+                          fontFamily: "Jua",
+                        }}
+                      >
+                        구매완료
+                      </button>
+                    )}
+                    <button
+                      className="pixel-btn delete"
+                      onClick={() => handleDelete(item)}
+                      style={{ padding: "0 15px", height: "40px" }}
+                    >
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              ))
+          )}
+        </div>
+      </div>
+      <div
+        className="pixel-card"
+        style={{
+          flex: 0.7,
+          minWidth: "280px",
+          position: "sticky",
+          top: "115px",
+          padding: "25px",
+          minHeight: "auto",
+          justifyContent: "flex-start",
+        }}
+      >
+        <h3 style={{ fontSize: "1.3rem", marginBottom: "15px" }}>
+          ⭐ 자주 사는 품목
+        </h3>
+        {uniqueFavorites.length === 0 ? (
+          <p
+            style={{
+              color: "#cbd5e0",
+              fontSize: "0.9rem",
+              textAlign: "center",
+            }}
+          >
+            별을 눌러 추가해보세요!
+          </p>
+        ) : (
+          <ul
+            style={{ listStyle: "none", padding: 0, margin: 0, width: "100%" }}
+          >
+            {uniqueFavorites.map((fav) => (
+              <li
+                key={fav.id}
+                style={{
+                  padding: "12px",
+                  marginBottom: "8px",
+                  color: "#4a5568",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  borderRadius: "12px",
+                  border: "1px dashed #edf2f7",
+                }}
+              >
+                <div
+                  onClick={() => addItemWithText(fav.text)}
+                  style={{
+                    cursor: "pointer",
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                  }}
                 >
-                  삭제
+                  <span className="no-dot" style={{ color: "#fbc02d" }}>
+                    ★
+                  </span>
+                  <span className="no-dot">{fav.text}</span>
+                </div>
+                <button
+                  onClick={() => toggleFavorite(fav)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#cbd5e0",
+                    cursor: "pointer",
+                    fontSize: "1.1rem",
+                    padding: "0 5px",
+                  }}
+                >
+                  ✕
                 </button>
-              </div>
-            </div>
-          ))
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </div>

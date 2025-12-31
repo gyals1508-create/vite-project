@@ -181,7 +181,7 @@ body {
   background: #aab7ec !important;
   color: #fff !important;
   border: none;
-  border-radius: 25px;
+  border-radius: 17.5px;
   padding: 0 40px;
   cursor: pointer;
   font-family: "Jua", sans-serif;
@@ -191,7 +191,7 @@ body {
   box-shadow: 0 8px 20px rgba(170, 183, 236, 0.4);
   white-space: nowrap;
   transition: transform 0.2s;
-  min-width: 100px;
+  min-width: 0px;
 }
 .pixel-btn:active {
   transform: scale(0.95);
@@ -214,13 +214,14 @@ body {
   text-align: left;
 }
 .item-row span::before {
-  content: "";
+  content: "•"; /* 또는 공통 기호 */
+  margin-right: 10px;
+  color: #aab7ec;
   display: inline-block;
-  width: 8px;
-  height: 8px;
-  background-color: #aab7ec;
-  border-radius: 50%;
-  margin-right: 15px;
+}
+/* 칼로리 내부의 추가 기호 발생 방지 */
+.item-row span span::before {
+  content: none !important;
 }
 .pixel-btn.delete {
   margin-left: auto !important;
@@ -235,73 +236,70 @@ body {
 }
 
 /* ============================================================
-   3. 대시보드 (Home) 전용 스타일
+   3. 대시보드 (Home) 전용 스타일 - 카드 크기 대폭 확대
    ============================================================ */
 .home-container {
-  max-width: 900px;
+  max-width: 1600px !important; /* 전체 가용 너비를 더 넓게 */
   width: 100%;
   padding: 0 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-.dashboard-header {
-  text-align: center;
-  margin-bottom: 40px;
-}
-.dashboard-header h2 {
-  color: #2d3748;
-  font-size: 2.2rem;
-  margin-bottom: 10px;
-  text-shadow: none;
-}
-.date-text {
-  color: #718096;
-  font-size: 1.1rem;
+  box-sizing: border-box;
 }
 
-.dashboard-grid {
-  display: flex;
-  gap: 25px;
-  width: 100%;
-  justify-content: center;
+.home-container > div:last-child {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 30px !important; /* 카드 간격도 시원하게 */
+  width: 100% !important;
+  justify-content: center !important;
+  margin-top: 30px;
 }
 
 .card {
   background: #ffffff;
-  border-radius: 25px;
-  padding: 35px;
-  width: 45%;
+  border-radius: 30px;
+  padding: 45px; /* 내부 여백 확대 */
+  flex: 1 !important;
+  max-width: 400px !important; /* ★ 카드 최대 크기 늘림 */
+  min-width: 300px !important; /* ★ 최소 크기 사수 */
   text-align: center;
-  box-shadow: 0 10px 30px rgba(170, 183, 236, 0.15);
+  box-shadow: 0 12px 35px rgba(170, 183, 236, 0.18);
   border: 2px solid #e2e8f0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 450px; /* 카드 높이도 어느 정도 확보 */
 }
 
 .card h3 {
   color: #2d3748;
-  font-size: 1.6rem;
-  margin-bottom: 15px;
+  font-size: 1.8rem; /* 제목 크기 확대 */
+  margin-bottom: 20px;
   display: flex;
   justify-content: center;
   align-items: center;
   white-space: nowrap;
-  gap: 5px;
+  gap: 8px;
 }
 
 .count-box {
-  font-size: 3.5rem;
+  font-size: 4rem; /* 숫자 크기 확대 */
   font-weight: bold;
   color: #5e72e4;
-  margin: 10px 0;
+  margin: 15px 0;
 }
 .sub-text {
   color: #718096;
-  font-size: 1rem;
-  margin-bottom: 25px;
+  font-size: 1.1rem;
+  margin-bottom: 30px;
 }
 
 /* =========================================
-   [달력 디자인] Pocket Life 모던 스타일 (수정됨)
+   [달력 디자인] Pocket Life 모던 스타일
    ========================================= */
 .react-datepicker {
   font-family: "Jua", sans-serif !important;
@@ -331,7 +329,6 @@ body {
   border-radius: 50% !important;
   color: #4a5568 !important;
   font-size: 1rem !important;
-  /* ★ 핵심 수정: 기본 테두리 제거 */
   outline: none !important;
 }
 .react-datepicker__day:hover {
@@ -339,14 +336,12 @@ body {
   color: #5e72e4 !important;
 }
 
-/* ★ 수정됨: 선택된 날짜 테두리 제거 및 스타일 */
 .react-datepicker__day--selected,
 .react-datepicker__day--keyboard-selected {
   background-color: #5e72e4 !important;
   color: #ffffff !important;
   font-weight: bold;
   box-shadow: 0 4px 6px rgba(94, 114, 228, 0.3);
-  /* ★ 핵심 수정: 클릭 시 생기는 검은 테두리 제거 */
   outline: none !important;
   border: none !important;
 }
@@ -359,7 +354,6 @@ body {
 .react-datepicker__day--today.react-datepicker__day--selected {
   color: #ffffff !important;
   background-color: #5e72e4 !important;
-  /* ★ 핵심 수정: 오늘 날짜 선택 시 테두리 제거 */
   outline: none !important;
 }
 
@@ -384,8 +378,23 @@ body {
   outline: none !important;
   background: #edf2f7;
   color: #718096;
-  padding: 8px 15px;
-  border-radius: 10px;
-  font-size: 0.9rem;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 1rem;
   margin-top: auto;
+}
+.pixel-btn.edit {
+  background: #48bb78 !important;
+  height: 40px;
+  padding: 0 25px;
+  font-size: 16px;
+  border-radius: 15px;
+  box-shadow: none !important;
+}
+
+/* 창이 좁아질 때만 유연하게 줄바꿈 */
+@media (max-width: 1250px) {
+  .home-container > div:last-child {
+    flex-wrap: wrap !important;
+  }
 }

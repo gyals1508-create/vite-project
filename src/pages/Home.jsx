@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import DatePicker, { registerLocale } from "react-datepicker";
 import { ko } from "date-fns/locale";
+import DashboardCard from "../components/DashboardCard";
 import "react-datepicker/dist/react-datepicker.css";
 import "../Retro.css";
 
@@ -10,12 +10,11 @@ registerLocale("ko", ko);
 const Home = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dashboardData, setDashboardData] = useState({
-    mealCount: 0,
-    recentMenu: "기록 없음",
-    shoppingCount: 0,
-    shoppingMsg: "장바구니가 비었어요!",
-    todoCount: 0, // ★ 추가
-    txTotal: 0, // ★ 추가
+    meals: [],
+    shoppingItems: [],
+    todos: [],
+    income: 0,
+    expense: 0,
   });
 
   const getDateStr = (dateObj) => {
@@ -25,21 +24,16 @@ const Home = () => {
     return `${year}-${month}-${day}`;
   };
 
-  const changeDate = (days) => {
-    const newDate = new Date(currentDate);
-    newDate.setDate(newDate.getDate() + days);
-    setCurrentDate(newDate);
-  };
-
   const CustomInput = React.forwardRef(({ value, onClick }, ref) => (
     <span
       onClick={onClick}
       ref={ref}
       style={{
         fontWeight: "bold",
-        color: "#4a5568",
+        color: "#2d3748",
         cursor: "pointer",
         fontSize: "1.1rem",
+        outline: "none",
       }}
     >
       {value} 📅
@@ -48,88 +42,93 @@ const Home = () => {
 
   useEffect(() => {
     const dateStr = getDateStr(currentDate);
-    const userId = "testUser"; // 테스트용 유저 아이디
+    const userId = "testUser";
+    const fetchUrl = (path) => `http://localhost:8080/api/${path}`;
 
-    const fetchMeals = fetch(
-      `http://localhost:8080/api/meals?date=${dateStr}`
-    ).then((res) => res.json());
-    const fetchShopping = fetch(
-      `http://localhost:8080/api/shopping?date=${dateStr}`
-    ).then((res) => res.json());
-    const fetchTodos = fetch(
-      `http://localhost:8080/api/todo?userId=${userId}&date=${dateStr}`
-    ).then((res) => res.json());
-    const fetchTx = fetch(
-      `http://localhost:8080/api/tx?userId=${userId}&date=${dateStr}`
-    ).then((res) => res.json());
-
-    Promise.all([fetchMeals, fetchShopping, fetchTodos, fetchTx])
-      .then(([meals, shoppingItems, todos, txs]) => {
-        const toBuyCount = shoppingItems.filter(
-          (item) => !item.isBought
-        ).length;
+    Promise.all([
+      fetch(fetchUrl(`meals?date=${dateStr}`)).then((res) => res.json()),
+      fetch(fetchUrl(`shopping?date=${dateStr}`)).then((res) => res.json()),
+      fetch(fetchUrl(`todo?userId=${userId}&date=${dateStr}`)).then((res) =>
+        res.json()
+      ),
+      fetch(fetchUrl(`tx?userId=${userId}&date=${dateStr}`)).then((res) =>
+        res.json()
+      ),
+    ])
+      .then(([meals, shopping, todos, txs]) => {
+        const income = txs
+          .filter((t) => t.txType === "INCOME")
+          .reduce((sum, t) => sum + t.amount, 0);
+        const expense = txs
+          .filter((t) => t.txType === "EXPENSE")
+          .reduce((sum, t) => sum + t.amount, 0);
+        const sortedShopping = [...shopping].sort(
+          (a, b) => a.isBought - b.isBought
+        );
         setDashboardData({
-          mealCount: meals.length,
-          recentMenu:
-            meals.length > 0 ? meals[meals.length - 1].text : "기록 없음",
-          shoppingCount: toBuyCount,
-          shoppingMsg:
-            toBuyCount > 0 ? "사야 할 물건이 있어요!" : "모두 구매 완료!",
-          todoCount: todos.length, // ★ 일정 개수 업데이트
-          txTotal: txs.reduce((sum, item) => sum + item.amount, 0), // ★ 가계부 총액 계산
+          meals,
+          shoppingItems: sortedShopping,
+          todos,
+          income,
+          expense,
         });
       })
       .catch((err) => console.error("데이터 로딩 실패:", err));
   }, [currentDate]);
 
-  const cardStyle = {
-    width: "300px",
-    height: "400px",
-    padding: "30px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "space-between",
-    boxSizing: "border-box",
-  };
+  // ★ 칼로리 합산 및 상태 체크 로직 추가
+  const totalCalories = dashboardData.meals.reduce(
+    (sum, m) => sum + (Number(m.calories) || 0),
+    0
+  );
 
   return (
     <div
       className="home-container"
       style={{
         width: "100%",
+        maxWidth: "1400px",
+        margin: "0 auto",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "flex-start",
-        marginTop: "-100px",
+        marginTop: "-40px",
+        padding: "0 15px",
       }}
     >
       <header
-        className="dashboard-header"
-        style={{ marginBottom: "110px", textAlign: "center", width: "100%" }}
+        style={{ marginBottom: "50px", textAlign: "center", width: "100%" }}
       >
         <h2
-          style={{ fontSize: "2.2rem", marginBottom: "5px", color: "#2d3748" }}
+          style={{
+            fontSize: "clamp(1.5rem, 5vw, 2.5rem)",
+            color: "#2d3748",
+            marginBottom: "15px",
+          }}
         >
-          🏠 HOME DASHBOARD
+          👛 POCKET DASHBOARD
         </h2>
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: "15px",
+            gap: "20px",
           }}
         >
           <button
-            onClick={() => changeDate(-1)}
+            onClick={() =>
+              setCurrentDate(
+                new Date(currentDate.setDate(currentDate.getDate() - 1))
+              )
+            }
             style={{
               background: "none",
               border: "none",
               cursor: "pointer",
-              color: "#a0aec0",
-              fontSize: "1.3rem",
+              color: "#5e72e4",
+              fontSize: "1.5rem",
+              outline: "none",
             }}
           >
             ◀
@@ -139,17 +138,21 @@ const Home = () => {
             selected={currentDate}
             onChange={(date) => setCurrentDate(date)}
             dateFormat="yyyy년 MM월 dd일 eeee"
-            dateFormatCalendar="yyyy년 LLLL"
             customInput={<CustomInput />}
           />
           <button
-            onClick={() => changeDate(1)}
+            onClick={() =>
+              setCurrentDate(
+                new Date(currentDate.setDate(currentDate.getDate() + 1))
+              )
+            }
             style={{
               background: "none",
               border: "none",
               cursor: "pointer",
-              color: "#a0aec0",
-              fontSize: "1.3rem",
+              color: "#5e72e4",
+              fontSize: "1.5rem",
+              outline: "none",
             }}
           >
             ▶
@@ -160,104 +163,49 @@ const Home = () => {
       <div
         style={{
           display: "flex",
-          gap: "20px",
-          width: "150%",
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: "25px",
+          width: "100%",
           justifyContent: "center",
+          paddingBottom: "40px",
         }}
       >
-        {/* 1. 일정 (데이터 연동) */}
-        <div className="card" style={cardStyle}>
-          <h3>
-            <span>일정</span> 📅
-          </h3>
-          <div className="count-box" style={{ fontSize: "4rem" }}>
-            {dashboardData.todoCount}
-          </div>
-          <p className="sub-text" style={{ fontSize: "1rem" }}>
-            할 일 개수
-          </p>
-          <Link to="/schedule">
-            <button
-              style={{
-                border: "none",
-                background: "#f8fafc",
-                padding: "10px 20px",
-                borderRadius: "10px",
-                color: "#718096",
-                cursor: "pointer",
-              }}
-            >
-              보기
-            </button>
-          </Link>
-        </div>
+        <DashboardCard
+          title="일정 📅"
+          list={dashboardData.todos}
+          emptyMsg="할 일이 없어요!"
+          linkTo="/schedule"
+          btnText="자세히 보기"
+        />
 
-        {/* 2. 오늘의 식단 */}
-        <div className="card" style={cardStyle}>
-          <h3>
-            <span>오늘의 식단</span> 🍚
-          </h3>
-          <div className="count-box" style={{ fontSize: "4rem" }}>
-            {dashboardData.mealCount}
-          </div>
-          <p className="sub-text" style={{ fontSize: "1rem" }}>
-            마지막: {dashboardData.recentMenu}
-          </p>
-          <Link to="/meal">
-            <button
-              style={{ border: "none", outline: "none", cursor: "pointer" }}
-            >
-              기록하러 가기
-            </button>
-          </Link>
-        </div>
+        {/* ★ 식단 카드에 totalCalories 전달 */}
+        <DashboardCard
+          title="오늘의 식단 🍚"
+          list={dashboardData.meals}
+          emptyMsg="기록이 없어요!"
+          linkTo="/meal"
+          btnText="기록하러 가기"
+          isMeal={true}
+          totalCalories={totalCalories}
+        />
 
-        {/* 3. 장보기 목록 */}
-        <div className="card" style={cardStyle}>
-          <h3>
-            <span>장보기 목록</span> 🛒
-          </h3>
-          <div className="count-box" style={{ fontSize: "4rem" }}>
-            {dashboardData.shoppingCount}
-          </div>
-          <p className="sub-text" style={{ fontSize: "1rem" }}>
-            {dashboardData.shoppingMsg}
-          </p>
-          <Link to="/shopping">
-            <button
-              style={{ border: "none", outline: "none", cursor: "pointer" }}
-            >
-              장바구니 확인
-            </button>
-          </Link>
-        </div>
-
-        {/* 4. 가계부 (데이터 연동) */}
-        <div className="card" style={cardStyle}>
-          <h3>
-            <span>가계부</span> 💰
-          </h3>
-          <div className="count-box" style={{ fontSize: "2.5rem" }}>
-            {dashboardData.txTotal.toLocaleString()}원
-          </div>
-          <p className="sub-text" style={{ fontSize: "1rem" }}>
-            오늘의 합계
-          </p>
-          <Link to="/account">
-            <button
-              style={{
-                border: "none",
-                background: "#f8fafc",
-                padding: "10px 20px",
-                borderRadius: "10px",
-                color: "#718096",
-                cursor: "pointer",
-              }}
-            >
-              보기
-            </button>
-          </Link>
-        </div>
+        <DashboardCard
+          title="장바구니 🛍️"
+          list={dashboardData.shoppingItems}
+          emptyMsg="구매 목록이 비어있어요!"
+          linkTo="/shopping"
+          btnText="목록 확인"
+          isShopping={true}
+        />
+        <DashboardCard
+          title="가계부 💰"
+          isAccount={true}
+          income={dashboardData.income}
+          expense={dashboardData.expense}
+          linkTo="/account"
+          btnText="가계부 보기"
+        />
       </div>
     </div>
   );

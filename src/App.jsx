@@ -61,7 +61,7 @@ function Nav() {
               location.pathname === "/shopping" ? "active" : ""
             }`}
           >
-            장보기
+            장바구니
           </Link>
 
           {/* ▼ [추가됨] 4. 일정 ▼ */}
