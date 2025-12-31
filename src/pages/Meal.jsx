@@ -16,6 +16,8 @@ const Meal = () => {
   const [editingText, setEditingText] = useState("");
   const [editingCalories, setEditingCalories] = useState("");
   const [displayRecs, setDisplayRecs] = useState([]);
+  // ★ 경고 메시지 상태 추가
+  const [errorMessage, setErrorMessage] = useState("");
 
   const dailyGoal = 2000;
   const totalCalories = meals.reduce(
@@ -48,6 +50,7 @@ const Meal = () => {
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() + days);
     setCurrentDate(newDate);
+    setErrorMessage(""); // 날짜 바뀌면 경고 초기화
   };
 
   const validateNumber = (val) => val.replace(/[^0-9]/g, "");
@@ -84,6 +87,15 @@ const Meal = () => {
 
   const addMeal = () => {
     if (inputValue.trim() === "") return;
+
+    // ★ 중복 체크 로직 (간식 제외)
+    const isDuplicate =
+      mealType !== "간식" && meals.some((m) => m.mealType === mealType);
+    if (isDuplicate) {
+      setErrorMessage(`${mealType}은 이미 기록했어요! 수정을 부탁드려요`);
+      return;
+    }
+
     fetch("http://localhost:8080/api/meals", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -99,12 +111,16 @@ const Meal = () => {
         setMeals([...meals, saved]);
         setInputValue("");
         setCalorieInput("");
+        setErrorMessage(""); // 추가 성공 시 경고 제거
       });
   };
 
   const deleteMeal = (id) => {
     fetch(`http://localhost:8080/api/meals/${id}`, { method: "DELETE" }).then(
-      () => setMeals(meals.filter((m) => m.id !== id))
+      () => {
+        setMeals(meals.filter((m) => m.id !== id));
+        setErrorMessage(""); // 삭제 시 경고 제거
+      }
     );
   };
 
@@ -129,7 +145,6 @@ const Meal = () => {
   const btnBaseStyle = { outline: "none", border: "none", boxShadow: "none" };
 
   return (
-    /* ★ 중앙 정렬 스타일 보정 완료 */
     <div
       className="main-content"
       style={{
@@ -144,7 +159,6 @@ const Meal = () => {
         boxSizing: "border-box",
       }}
     >
-      {/* 1. 좌측: 오늘의 식단 기록 카드 */}
       <div className="pixel-card" style={{ flex: "0 1 700px", minWidth: "0" }}>
         <h3>🥗 오늘의 식단 기록</h3>
         <div
@@ -201,7 +215,10 @@ const Meal = () => {
           {["아침", "점심", "저녁", "간식"].map((type) => (
             <button
               key={type}
-              onClick={() => setMealType(type)}
+              onClick={() => {
+                setMealType(type);
+                setErrorMessage("");
+              }}
               style={{
                 ...btnBaseStyle,
                 background: mealType === type ? "#5e72e4" : "#edf2f7",
@@ -217,14 +234,22 @@ const Meal = () => {
         </div>
         <div
           className="input-group"
-          style={{ display: "flex", width: "100%", gap: "10px" }}
+          style={{
+            display: "flex",
+            width: "100%",
+            gap: "10px",
+            marginBottom: errorMessage ? "5px" : "20px",
+          }}
         >
           <input
             className="pixel-input"
             type="text"
             placeholder="음식명"
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              setErrorMessage("");
+            }}
             onKeyPress={(e) => e.key === "Enter" && addMeal()}
             style={{ flex: 3, minWidth: "0" }}
           />
@@ -234,12 +259,29 @@ const Meal = () => {
             placeholder="kcal"
             value={calorieInput}
             onChange={(e) => setCalorieInput(validateNumber(e.target.value))}
+            onKeyPress={(e) => e.key === "Enter" && addMeal()}
             style={{ width: "70px", flex: "none" }}
           />
           <button className="pixel-btn" onClick={addMeal} style={btnBaseStyle}>
             추가
           </button>
         </div>
+
+        {/* ★ 중복 경고 메시지 출력 영역 */}
+        {errorMessage && (
+          <div
+            style={{
+              color: "#f56565",
+              fontSize: "0.85rem",
+              marginBottom: "15px",
+              marginLeft: "5px",
+              fontWeight: "bold",
+            }}
+          >
+            ⚠️ {errorMessage}
+          </div>
+        )}
+
         <div
           style={{
             width: "100%",
@@ -274,6 +316,7 @@ const Meal = () => {
                       style={{ flex: 3, height: "35px", minWidth: "0" }}
                       value={editingText}
                       onChange={(e) => setEditingText(e.target.value)}
+                      onKeyPress={(e) => e.key === "Enter" && saveEdit(meal.id)}
                     />
                     <input
                       className="pixel-input"
@@ -283,6 +326,7 @@ const Meal = () => {
                       onChange={(e) =>
                         setEditingCalories(validateNumber(e.target.value))
                       }
+                      onKeyPress={(e) => e.key === "Enter" && saveEdit(meal.id)}
                     />
                   </div>
                 ) : (
@@ -357,7 +401,6 @@ const Meal = () => {
         </div>
       </div>
 
-      {/* 2. 우측 영역: 영양 요약 & 추천 식단 (세로 밸런스 유지) */}
       <div
         style={{
           flex: "0 0 320px",
@@ -377,7 +420,13 @@ const Meal = () => {
             📊 영양 요약
           </h3>
           <div style={{ marginBottom: "20px" }}>
-            <div style={{ fontSize: "0.85rem", color: "#718096" }}>
+            <div
+              style={{
+                fontSize: "0.85rem",
+                color: "#718096",
+                textAlign: "center",
+              }}
+            >
               오늘 총 섭취량
             </div>
             <div
@@ -433,26 +482,16 @@ const Meal = () => {
             </span>
           </div>
         </div>
-
         <div
           className="pixel-card"
           style={{
             padding: "20px",
             margin: 0,
-            width: "100%",
-            flex: "none",
-            minHeight: "auto",
-            display: "block",
+            width: "105%",
             textAlign: "center",
           }}
         >
-          <h3
-            style={{
-              fontSize: "1.3rem",
-              marginBottom: "10px",
-              textAlign: "center",
-            }}
-          >
+          <h3 style={{ fontSize: "1.3rem", marginBottom: "-15px" }}>
             💡 추천 식단
           </h3>
           <p
@@ -460,7 +499,6 @@ const Meal = () => {
               fontSize: "0.85rem",
               color: "#718096",
               marginBottom: "30px",
-              textAlign: "center",
             }}
           >
             {isOver ? "가벼운 한 끼 어떠세요?" : "이런 든든한 식단은 어때요?"}
