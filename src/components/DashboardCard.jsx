@@ -10,6 +10,7 @@ const DashboardCard = ({
   isMeal,
   isAccount,
   isShopping,
+  isTodo,
   income,
   expense,
   totalCalories,
@@ -34,12 +35,8 @@ const DashboardCard = ({
   const totalBalance = safeIncome - safeExpense;
   const safeCalories = Number(totalCalories) || 0;
   const isOver = safeCalories > 2000;
-
   const hasUnconfirmedItems =
-    isShopping &&
-    list &&
-    list.length > 0 &&
-    list.some((item) => !item.isBought);
+    isShopping && list?.length > 0 && list.some((item) => !item.isBought);
 
   return (
     <div className="card" style={cardStyle}>
@@ -61,6 +58,8 @@ const DashboardCard = ({
           textAlign: "left",
           padding: "20px 10px",
           overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         {isAccount ? (
@@ -113,9 +112,14 @@ const DashboardCard = ({
               </span>
             </div>
           </div>
+        ) : isTodo ? (
+          /* [수정] 일정 카드인 경우 목록 대신 비어있는 메시지 표시 */
+          <p style={{ color: "#cbd5e0", textAlign: "center", margin: "auto" }}>
+            {emptyMsg}
+          </p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {list && list.length > 0 ? (
+            {list?.length > 0 ? (
               list.slice(0, 5).map((item, idx) => (
                 <li
                   key={idx}
@@ -137,7 +141,6 @@ const DashboardCard = ({
                     }}
                   >
                     {isShopping ? (item.isBought ? "✅ " : "🛒 ") : "• "}
-                    {/* [최종수정] 식단일 경우 파란색 강조 말머리 추가 */}
                     {isMeal && item.mealType && (
                       <strong style={{ color: "#5e72e4", marginRight: "6px" }}>
                         [{item.mealType}]
@@ -209,7 +212,6 @@ const DashboardCard = ({
             backgroundColor: "#fff5f5",
             padding: "10px",
             borderRadius: "10px",
-            boxSizing: "border-box",
           }}
         >
           ⚠️ 구매완료 해주세요!

@@ -17,6 +17,21 @@ const Home = () => {
     expense: 0,
   });
 
+  const dummyTodos = [
+    {
+      todoid: "d1",
+      content: "🏃 조깅하기",
+      isDone: false,
+      dodate: "2026-01-01",
+    },
+    {
+      todoid: "d2",
+      content: "📚 리액트 공부",
+      isDone: true,
+      dodate: "2026-01-01",
+    },
+  ];
+
   const getDateStr = (dateObj) => {
     const year = dateObj.getFullYear();
     const month = String(dateObj.getMonth() + 1).padStart(2, "0");
@@ -66,22 +81,21 @@ const Home = () => {
         const expense = (txs || [])
           .filter((t) => t.txType === "EXPENSE")
           .reduce((sum, t) => sum + (t.amount || 0), 0);
-
-        // [제발! 핵심 수정] 즐겨찾기 데이터가 섞여와도 대시보드엔 '오늘 날짜'인 것만 골라냄
         const todayShoppingItems = (shopping || []).filter(
           (item) => item.shoppingDate === dateStr
         );
-
-        // 중복 제거 (이름이 같은 품목 중 최신 것 하나만)
         const uniqueShoppingItems = todayShoppingItems.filter(
           (item, index, self) =>
             index === self.findLastIndex((t) => t.text === item.text)
+        );
+        const combinedTodos = [...dummyTodos, ...(todos || [])].filter(
+          (t) => t.dodate === dateStr
         );
 
         setDashboardData({
           meals: meals || [],
           shoppingItems: uniqueShoppingItems,
-          todos: todos || [],
+          todos: combinedTodos,
           income,
           expense,
         });
@@ -96,11 +110,13 @@ const Home = () => {
   const hasUnconfirmedItems = dashboardData.shoppingItems.some(
     (item) => !item.isBought
   );
+
+  // [수정] 요청하신 버튼 스타일만 정확히 변경 (테두리 제거 및 색상 적용)
   const btnStyle = {
     background: "none",
     border: "none",
     cursor: "pointer",
-    color: "#5e72e4",
+    color: "#AAB7EC",
     fontSize: "1.5rem",
     outline: "none",
     boxShadow: "none",
@@ -162,6 +178,7 @@ const Home = () => {
           </button>
         </div>
       </header>
+
       <div
         style={{
           display: "flex",
@@ -177,6 +194,7 @@ const Home = () => {
           emptyMsg="할 일이 없어요!"
           linkTo="/schedule"
           btnText="자세히 보기"
+          isTodo={true}
         />
         <DashboardCard
           title="오늘의 식단 🍚"
@@ -208,4 +226,5 @@ const Home = () => {
     </div>
   );
 };
+
 export default Home;

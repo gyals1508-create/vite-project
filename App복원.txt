@@ -1,0 +1,123 @@
+import React from react;
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Link,
+  useLocation,
+} from react-router-dom;
+
+import Home from .pagesHome;
+import Meal from .pagesMeal;
+import Shopping from .pagesShopping;
+import Login from ....Self_PracticeLogin;
+import Signup from ....Self_PracticeSignup;
+import .Retro.css;
+
+function Nav() {
+  const location = useLocation();
+
+   특정 페이지(로그인, 회원가입)에서 상단 헤더 숨김 처리
+  if (location.pathname === login  location.pathname === signup)
+    return null;
+
+  return (
+    nav className=pixel-nav-container
+      div className=pixel-nav-bar
+        Link
+          to=
+          className=nav-logo-small
+          style={{ textDecoration none }}
+        
+          span className=logo-textPocket Lifespan
+        Link
+        div className=nav-tabs
+          Link
+            to=
+            className={`nav-tab ${location.pathname ===   active  }`}
+          
+            대시보드
+          Link
+          div className=nav-dividerdiv
+          Link
+            to=meal
+            className={`nav-tab ${
+              location.pathname === meal  active  
+            }`}
+          
+            식단 관리
+          Link
+          div className=nav-dividerdiv
+          Link
+            to=shopping
+            className={`nav-tab ${
+              location.pathname === shopping  active  
+            }`}
+          
+            장바구니
+          Link
+          div className=nav-dividerdiv
+          Link
+            to=schedule
+            className={`nav-tab ${
+              location.pathname === schedule  active  
+            }`}
+          
+            일정
+          Link
+          div className=nav-dividerdiv
+          Link
+            to=account
+            className={`nav-tab ${
+              location.pathname === account  active  
+            }`}
+          
+            가계부
+          Link
+        div
+        div className=nav-user-infoㅇㅇ님 반갑습니다.div
+      div
+    nav
+  );
+}
+
+function App() {
+  return (
+    BrowserRouter
+      Nav 
+      main className=main-content
+        Routes
+          Route path= element={Home } 
+          Route path=meal element={Meal } 
+          Route path=shopping element={Shopping } 
+          Route path=login element={Login } 
+          Route path=signup element={Signup } 
+          Route
+            path=schedule
+            element={
+              div
+                className=pixel-card
+                style={{ textAlign center, padding 50px }}
+              
+                h3📅 일정 페이지 준비중...h3
+              div
+            }
+          
+          Route
+            path=account
+            element={
+              div
+                className=pixel-card
+                style={{ textAlign center, padding 50px }}
+              
+                h3💸 가계부 페이지 준비중...h3
+              div
+            }
+          
+        Routes
+      main
+    BrowserRouter
+  );
+}
+
+export default App;

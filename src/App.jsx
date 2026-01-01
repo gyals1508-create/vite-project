@@ -6,31 +6,19 @@ import {
   Link,
   useLocation,
 } from "react-router-dom";
-
 import Home from "./pages/Home";
 import Meal from "./pages/Meal";
 import Shopping from "./pages/Shopping";
-import Login from "../../Self_Practice/Login";
-import Signup from "../../Self_Practice/Signup";
 import "./Retro.css";
 
 function Nav() {
   const location = useLocation();
 
-  // 특정 페이지(로그인, 회원가입)에서 상단 헤더 숨김 처리
-  // "/" 경로가 로그인이 되었으므로 "/" 도 숨김 목록에 추가하면 더 안전해
-  if (
-    location.pathname === "/login" ||
-    location.pathname === "/signup" ||
-    location.pathname === "/"
-  )
-    return null;
-
   return (
     <nav className="pixel-nav-container">
       <div className="pixel-nav-bar">
         <Link
-          to="/dashboard"
+          to="/"
           className="nav-logo-small"
           style={{ textDecoration: "none" }}
         >
@@ -38,9 +26,11 @@ function Nav() {
         </Link>
         <div className="nav-tabs">
           <Link
-            to="/dashboard"
+            to="/"
             className={`nav-tab ${
-              location.pathname === "/dashboard" ? "active" : ""
+              location.pathname === "/" || location.pathname === "/dashboard"
+                ? "active"
+                : ""
             }`}
           >
             대시보드
@@ -64,6 +54,7 @@ function Nav() {
             장바구니
           </Link>
           <div className="nav-divider"></div>
+          {/* [복구] 일정 탭 */}
           <Link
             to="/schedule"
             className={`nav-tab ${
@@ -73,6 +64,7 @@ function Nav() {
             일정
           </Link>
           <div className="nav-divider"></div>
+          {/* [복구] 가계부 탭 */}
           <Link
             to="/account"
             className={`nav-tab ${
@@ -89,45 +81,26 @@ function Nav() {
 }
 
 function App() {
+  const ReadyPage = ({ title }) => (
+    <div
+      className="pixel-card"
+      style={{ textAlign: "center", padding: "100px", marginTop: "50px" }}
+    >
+      <h3>{title} 페이지 준비중... 🚧</h3>
+    </div>
+  );
+
   return (
     <BrowserRouter>
       <Nav />
       <main className="main-content">
         <Routes>
-          {/* [임시수정] 첫 접속 시 로그인 페이지가 나오도록 설정 */}
-          <Route path="/" element={<Login />} />
-
-          {/* 나중에 팀원들과 합칠 때 위 줄을 지우고 아래 줄 주석을 푸세요 */}
-          {/* <Route path="/" element={<Home />} /> */}
-
+          <Route path="/" element={<Home />} />
           <Route path="/dashboard" element={<Home />} />
           <Route path="/meal" element={<Meal />} />
           <Route path="/shopping" element={<Shopping />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-
-          <Route
-            path="/schedule"
-            element={
-              <div
-                className="pixel-card"
-                style={{ textAlign: "center", padding: "50px" }}
-              >
-                <h3>📅 일정 페이지 준비중...</h3>
-              </div>
-            }
-          />
-          <Route
-            path="/account"
-            element={
-              <div
-                className="pixel-card"
-                style={{ textAlign: "center", padding: "50px" }}
-              >
-                <h3>💸 가계부 페이지 준비중...</h3>
-              </div>
-            }
-          />
+          <Route path="/schedule" element={<ReadyPage title="📅 일정" />} />
+          <Route path="/account" element={<ReadyPage title="💸 가계부" />} />
         </Routes>
       </main>
     </BrowserRouter>
