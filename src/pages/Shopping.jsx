@@ -63,12 +63,10 @@ const Shopping = () => {
       .catch((err) => console.error("로드 실패:", err));
   }, [currentDate]);
 
-  // ★ 10초 동안 계속 깜빡이는 함수
   const handleMoveToDate = (dateStr, text) => {
     setCurrentDate(new Date(dateStr));
     setTimeout(() => {
       setSearchTarget(text);
-      // 10초 후에 깜빡임 강제 종료
       setTimeout(() => setSearchTarget(""), 10000);
     }, 300);
   };
@@ -81,7 +79,6 @@ const Shopping = () => {
         const results = data
           .filter((i) => i.isBought && i.shoppingDate)
           .sort((a, b) => new Date(b.shoppingDate) - new Date(a.shoppingDate));
-
         if (results.length > 0) {
           setSearchResults(results);
           handleMoveToDate(results[0].shoppingDate, results[0].text);
@@ -106,7 +103,7 @@ const Shopping = () => {
       const updatedItem = {
         ...existingInToday,
         count: (existingInToday.count || 1) + 1,
-      };
+      }; // 백엔드 count 필드 반영
       fetch(`http://localhost:8080/api/shopping/${existingInToday.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -212,15 +209,7 @@ const Shopping = () => {
         justifyContent: "center",
       }}
     >
-      {/* ★ 계속 반짝이는 애니메이션 수정 */}
-      <style>{`
-        @keyframes highlightBlink {
-          0%, 100% { background-color: transparent; }
-          50% { background-color: #fff9c4; transform: scale(1.01); }
-        }
-        .no-dot::before { content: none !important; }
-      `}</style>
-
+      <style>{`@keyframes highlightBlink { 0%, 100% { background-color: transparent; } 50% { background-color: #fff9c4; transform: scale(1.01); } } .no-dot::before { content: none !important; }`}</style>
       <div className="pixel-card" style={{ flex: 1.5, minWidth: "0" }}>
         <h3>오늘의 장바구니🛍️</h3>
         <div
@@ -311,7 +300,6 @@ const Shopping = () => {
             추가
           </button>
         </div>
-
         {searchResults.length > 1 && (
           <div
             style={{
@@ -323,7 +311,7 @@ const Shopping = () => {
             }}
           >
             <span style={{ color: "#718096", marginRight: "10px" }}>
-              여러 번 구매했네요! 이동할 날짜 선택:
+              여러 번 구매했네요! 날짜 선택:
             </span>
             {searchResults.map((res, idx) => (
               <button
@@ -344,7 +332,6 @@ const Shopping = () => {
             ))}
           </div>
         )}
-
         {searchError && (
           <div
             style={{
@@ -358,7 +345,6 @@ const Shopping = () => {
             ⚠️ {searchError}
           </div>
         )}
-
         <div style={{ width: "100%" }}>
           {items.filter((i) => i.shoppingDate === getDateStr(currentDate))
             .length === 0 ? (
@@ -376,7 +362,6 @@ const Shopping = () => {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    // ★ 0.8초 주기로 계속 반짝임 (10초간 상태 유지)
                     animation:
                       searchTarget === item.text
                         ? "highlightBlink 0.8s infinite"
@@ -467,7 +452,6 @@ const Shopping = () => {
           )}
         </div>
       </div>
-
       <div
         className="pixel-card"
         style={{

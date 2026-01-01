@@ -16,7 +16,6 @@ const Meal = () => {
   const [editingText, setEditingText] = useState("");
   const [editingCalories, setEditingCalories] = useState("");
   const [displayRecs, setDisplayRecs] = useState([]);
-  // ★ 경고 메시지 상태 추가
   const [errorMessage, setErrorMessage] = useState("");
 
   const dailyGoal = 2000;
@@ -50,7 +49,7 @@ const Meal = () => {
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() + days);
     setCurrentDate(newDate);
-    setErrorMessage(""); // 날짜 바뀌면 경고 초기화
+    setErrorMessage("");
   };
 
   const validateNumber = (val) => val.replace(/[^0-9]/g, "");
@@ -87,8 +86,6 @@ const Meal = () => {
 
   const addMeal = () => {
     if (inputValue.trim() === "") return;
-
-    // ★ 중복 체크 로직 (간식 제외)
     const isDuplicate =
       mealType !== "간식" && meals.some((m) => m.mealType === mealType);
     if (isDuplicate) {
@@ -111,7 +108,7 @@ const Meal = () => {
         setMeals([...meals, saved]);
         setInputValue("");
         setCalorieInput("");
-        setErrorMessage(""); // 추가 성공 시 경고 제거
+        setErrorMessage("");
       });
   };
 
@@ -119,7 +116,7 @@ const Meal = () => {
     fetch(`http://localhost:8080/api/meals/${id}`, { method: "DELETE" }).then(
       () => {
         setMeals(meals.filter((m) => m.id !== id));
-        setErrorMessage(""); // 삭제 시 경고 제거
+        setErrorMessage("");
       }
     );
   };
@@ -246,6 +243,7 @@ const Meal = () => {
             type="text"
             placeholder="음식명"
             value={inputValue}
+            maxLength={30}
             onChange={(e) => {
               setInputValue(e.target.value);
               setErrorMessage("");
@@ -266,8 +264,6 @@ const Meal = () => {
             추가
           </button>
         </div>
-
-        {/* ★ 중복 경고 메시지 출력 영역 */}
         {errorMessage && (
           <div
             style={{
@@ -281,7 +277,6 @@ const Meal = () => {
             ⚠️ {errorMessage}
           </div>
         )}
-
         <div
           style={{
             width: "100%",
@@ -315,6 +310,7 @@ const Meal = () => {
                       className="pixel-input"
                       style={{ flex: 3, height: "35px", minWidth: "0" }}
                       value={editingText}
+                      maxLength={30}
                       onChange={(e) => setEditingText(e.target.value)}
                       onKeyPress={(e) => e.key === "Enter" && saveEdit(meal.id)}
                     />
@@ -350,7 +346,7 @@ const Meal = () => {
                         marginLeft: "8px",
                       }}
                     >
-                      ( {meal.calories || 0} kcal )
+                      ({meal.calories || 0} kcal)
                     </span>
                   </div>
                 )}
@@ -400,7 +396,7 @@ const Meal = () => {
           ))}
         </div>
       </div>
-
+      {/* 우측 사이드바 (영양 요약 등)는 기존 디자인 유지 */}
       <div
         style={{
           flex: "0 0 320px",

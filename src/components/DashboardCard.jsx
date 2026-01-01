@@ -29,8 +29,12 @@ const DashboardCard = ({
     boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
   };
 
-  const totalBalance = (income || 0) - (expense || 0);
-  const isOver = (totalCalories || 0) > 2000;
+  // 수치 계산 시 null 방지 로직 강화
+  const safeIncome = Number(income) || 0;
+  const safeExpense = Number(expense) || 0;
+  const totalBalance = safeIncome - safeExpense;
+  const safeCalories = Number(totalCalories) || 0;
+  const isOver = safeCalories > 2000;
 
   return (
     <div className="card" style={cardStyle}>
@@ -66,13 +70,13 @@ const DashboardCard = ({
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span style={{ color: "#a0aec0" }}>수입</span>
               <span style={{ color: "#5e72e4", fontWeight: "bold" }}>
-                +{income.toLocaleString()}원
+                +{safeIncome.toLocaleString()}원
               </span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span style={{ color: "#a0aec0" }}>지출</span>
               <span style={{ color: "#f5365c", fontWeight: "bold" }}>
-                -{expense.toLocaleString()}원
+                -{safeExpense.toLocaleString()}원
               </span>
             </div>
             <div
@@ -151,7 +155,7 @@ const DashboardCard = ({
               color: isOver ? "#f5365c" : "#48bb78",
             }}
           >
-            {(totalCalories || 0).toLocaleString()} kcal
+            {safeCalories.toLocaleString()} kcal
           </span>
         </div>
       )}

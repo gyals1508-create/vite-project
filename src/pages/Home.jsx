@@ -46,26 +46,30 @@ const Home = () => {
     const fetchUrl = (path) => `http://localhost:8080/api/${path}`;
 
     Promise.all([
-      fetch(fetchUrl(`meals?date=${dateStr}`)).then((res) => res.json()),
-      fetch(fetchUrl(`shopping?date=${dateStr}`)).then((res) => res.json()),
+      fetch(fetchUrl(`meals?date=${dateStr}`)).then((res) =>
+        res.json().catch(() => [])
+      ),
+      fetch(fetchUrl(`shopping?date=${dateStr}`)).then((res) =>
+        res.json().catch(() => [])
+      ),
       fetch(fetchUrl(`todo?userId=${userId}&date=${dateStr}`)).then((res) =>
-        res.json()
+        res.json().catch(() => [])
       ),
       fetch(fetchUrl(`tx?userId=${userId}&date=${dateStr}`)).then((res) =>
-        res.json()
+        res.json().catch(() => [])
       ),
     ])
       .then(([meals, shopping, todos, txs]) => {
-        const income = txs
+        const income = (txs || [])
           .filter((t) => t.txType === "INCOME")
-          .reduce((sum, t) => sum + t.amount, 0);
-        const expense = txs
+          .reduce((sum, t) => sum + (t.amount || 0), 0);
+        const expense = (txs || [])
           .filter((t) => t.txType === "EXPENSE")
-          .reduce((sum, t) => sum + t.amount, 0);
+          .reduce((sum, t) => sum + (t.amount || 0), 0);
         setDashboardData({
-          meals,
-          shoppingItems: shopping,
-          todos,
+          meals: meals || [],
+          shoppingItems: shopping || [],
+          todos: todos || [],
           income,
           expense,
         });
@@ -107,7 +111,6 @@ const Home = () => {
         >
           👛 POCKET DASHBOARD
         </h2>
-        {/* 화살표 정렬 보정 영역 */}
         <div
           style={{
             display: "flex",
