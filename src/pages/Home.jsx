@@ -66,9 +66,16 @@ const Home = () => {
         const expense = (txs || [])
           .filter((t) => t.txType === "EXPENSE")
           .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+        // 중복 제거 로직: 이름(text)이 같은 장바구니 품목은 하나만 표시
+        const uniqueShoppingItems = (shopping || []).filter(
+          (item, index, self) =>
+            index === self.findIndex((t) => t.text === item.text)
+        );
+
         setDashboardData({
           meals: meals || [],
-          shoppingItems: shopping || [],
+          shoppingItems: uniqueShoppingItems,
           todos: todos || [],
           income,
           expense,
@@ -119,11 +126,11 @@ const Home = () => {
           }}
         >
           <button
-            onClick={() =>
-              setCurrentDate(
-                new Date(currentDate.setDate(currentDate.getDate() - 1))
-              )
-            }
+            onClick={() => {
+              const newDate = new Date(currentDate);
+              newDate.setDate(newDate.getDate() - 1);
+              setCurrentDate(newDate);
+            }}
             style={btnStyle}
           >
             ◀
@@ -136,11 +143,11 @@ const Home = () => {
             customInput={<CustomInput />}
           />
           <button
-            onClick={() =>
-              setCurrentDate(
-                new Date(currentDate.setDate(currentDate.getDate() + 1))
-              )
-            }
+            onClick={() => {
+              const newDate = new Date(currentDate);
+              newDate.setDate(newDate.getDate() + 1);
+              setCurrentDate(newDate);
+            }}
             style={btnStyle}
           >
             ▶

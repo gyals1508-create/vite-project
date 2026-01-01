@@ -94,16 +94,21 @@ const Shopping = () => {
   const addItemWithText = (text) => {
     if (!text || text.trim() === "") return;
     const dateStr = getDateStr(currentDate);
+
+    // 로직 보완: 전체 아이템 중 동일 이름의 즐겨찾기 여부를 확인하여 새 항목에 적용
+    const isAlreadyFavorite = items.some(
+      (i) => i.text === text && i.isFavorite
+    );
+
     const existingInToday = items.find(
       (i) => i.text === text && i.shoppingDate === dateStr
     );
-    const favoriteItem = items.find((i) => i.text === text && i.isFavorite);
 
     if (existingInToday) {
       const updatedItem = {
         ...existingInToday,
         count: (existingInToday.count || 1) + 1,
-      }; // 백엔드 count 필드 반영
+      };
       fetch(`http://localhost:8080/api/shopping/${existingInToday.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -113,26 +118,12 @@ const Shopping = () => {
           items.map((i) => (i.id === existingInToday.id ? updatedItem : i))
         )
       );
-    } else if (favoriteItem) {
-      const updatedItem = {
-        ...favoriteItem,
-        shoppingDate: dateStr,
-        isBought: false,
-        count: 1,
-      };
-      fetch(`http://localhost:8080/api/shopping/${favoriteItem.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedItem),
-      }).then(() =>
-        setItems(items.map((i) => (i.id === favoriteItem.id ? updatedItem : i)))
-      );
     } else {
       const newItem = {
         text,
         isBought: false,
         shoppingDate: dateStr,
-        isFavorite: false,
+        isFavorite: isAlreadyFavorite, // 즐겨찾기 상태 상속
         count: 1,
       };
       fetch("http://localhost:8080/api/shopping", {
@@ -160,15 +151,25 @@ const Shopping = () => {
     );
   };
 
+  // 로직 보완: 동일한 이름을 가진 모든 항목의 즐겨찾기 상태를 동기화
   const toggleFavorite = (item) => {
-    const updatedItem = { ...item, isFavorite: !item.isFavorite };
+    const nextFavoriteStatus = !item.isFavorite;
+
+    // 현재 클릭한 항목 업데이트
+    const updatedItem = { ...item, isFavorite: nextFavoriteStatus };
+
     fetch(`http://localhost:8080/api/shopping/${item.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updatedItem),
-    }).then(() =>
-      setItems(items.map((i) => (i.id === item.id ? updatedItem : i)))
-    );
+    }).then(() => {
+      // 핵심: 메모리에 있는 모든 '이름이 같은' 품목들의 별 상태를 동기화
+      setItems((prevItems) =>
+        prevItems.map((i) =>
+          i.text === item.text ? { ...i, isFavorite: nextFavoriteStatus } : i
+        )
+      );
+    });
   };
 
   const handleDelete = (item) => {

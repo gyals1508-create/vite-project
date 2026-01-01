@@ -29,7 +29,6 @@ const DashboardCard = ({
     boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
   };
 
-  // 수치 계산 시 null 방지 로직 강화
   const safeIncome = Number(income) || 0;
   const safeExpense = Number(expense) || 0;
   const totalBalance = safeIncome - safeExpense;
@@ -55,6 +54,7 @@ const DashboardCard = ({
           flex: 1,
           textAlign: "left",
           padding: "20px 10px",
+          overflowY: "auto",
         }}
       >
         {isAccount ? (
@@ -117,10 +117,35 @@ const DashboardCard = ({
                     marginBottom: "12px",
                     fontSize: "0.95rem",
                     color: item.isBought ? "#cbd5e0" : "#4a5568",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
-                  {isShopping ? (item.isBought ? "✅ " : "🛒 ") : "• "}
-                  {item.text || item.title}
+                  <span
+                    style={{
+                      flex: 1,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {isShopping ? (item.isBought ? "✅ " : "🛒 ") : "• "}
+                    {item.text || item.title}
+                  </span>
+                  {/* 식단 카드일 때 리스트별 칼로리 표시 추가 */}
+                  {isMeal && item.calories !== undefined && (
+                    <span
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "#a0aec0",
+                        marginLeft: "8px",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {item.calories} kcal
+                    </span>
+                  )}
                 </li>
               ))
             ) : (
