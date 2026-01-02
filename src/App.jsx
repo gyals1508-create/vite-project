@@ -6,19 +6,27 @@ import {
   Link,
   useLocation,
 } from "react-router-dom";
+
 import Home from "./pages/Home";
 import Meal from "./pages/Meal";
 import Shopping from "./pages/Shopping";
+// [핵심] 학원 PC로 동기화된 실제 컴포넌트들 연결
+import Login from "../../Self_Practice/Login";
+import Signup from "../../Self_Practice/Signup";
+import Schedule from "../../Self_Practice/Schedule";
 import "./Retro.css";
 
 function Nav() {
   const location = useLocation();
 
+  // 로그인, 회원가입 화면에서는 상단 메뉴바 숨김 처리
+  if (["/", "/login", "/signup"].includes(location.pathname)) return null;
+
   return (
     <nav className="pixel-nav-container">
       <div className="pixel-nav-bar">
         <Link
-          to="/"
+          to="/dashboard"
           className="nav-logo-small"
           style={{ textDecoration: "none" }}
         >
@@ -26,11 +34,9 @@ function Nav() {
         </Link>
         <div className="nav-tabs">
           <Link
-            to="/"
+            to="/dashboard"
             className={`nav-tab ${
-              location.pathname === "/" || location.pathname === "/dashboard"
-                ? "active"
-                : ""
+              location.pathname === "/dashboard" ? "active" : ""
             }`}
           >
             대시보드
@@ -54,7 +60,7 @@ function Nav() {
             장바구니
           </Link>
           <div className="nav-divider"></div>
-          {/* [복구] 일정 탭 */}
+          {/* [복구] 실제 일정 컴포넌트 연결 */}
           <Link
             to="/schedule"
             className={`nav-tab ${
@@ -64,7 +70,6 @@ function Nav() {
             일정
           </Link>
           <div className="nav-divider"></div>
-          {/* [복구] 가계부 탭 */}
           <Link
             to="/account"
             className={`nav-tab ${
@@ -74,33 +79,43 @@ function Nav() {
             가계부
           </Link>
         </div>
-        <div className="nav-user-info">ㅇㅇ님 반갑습니다.</div>
+        <div className="nav-user-info">효민님 반갑습니다.</div>
       </div>
     </nav>
   );
 }
 
 function App() {
-  const ReadyPage = ({ title }) => (
-    <div
-      className="pixel-card"
-      style={{ textAlign: "center", padding: "100px", marginTop: "50px" }}
-    >
-      <h3>{title} 페이지 준비중... 🚧</h3>
-    </div>
-  );
-
   return (
     <BrowserRouter>
       <Nav />
       <main className="main-content">
         <Routes>
-          <Route path="/" element={<Home />} />
+          {/* [수정] 첫 접속 시 로그인 페이지가 나오도록 설정 */}
+          <Route path="/" element={<Login />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+
           <Route path="/dashboard" element={<Home />} />
           <Route path="/meal" element={<Meal />} />
           <Route path="/shopping" element={<Shopping />} />
-          <Route path="/schedule" element={<ReadyPage title="📅 일정" />} />
-          <Route path="/account" element={<ReadyPage title="💸 가계부" />} />
+          <Route path="/schedule" element={<Schedule />} />
+          {/* 가계부만 준비중으로 유지 */}
+          <Route
+            path="/account"
+            element={
+              <div
+                className="pixel-card"
+                style={{
+                  textAlign: "center",
+                  padding: "100px",
+                  marginTop: "50px",
+                }}
+              >
+                <h3>💸 가계부 페이지 준비중...</h3>
+              </div>
+            }
+          />
         </Routes>
       </main>
     </BrowserRouter>
