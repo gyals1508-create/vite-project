@@ -13,9 +13,23 @@ const ShoppingView = (props) => {
         justifyContent: "center",
         maxWidth: "1200px",
         margin: "0 auto",
+        padding: "0 20px",
+        boxSizing: "border-box",
       }}
     >
-      <style>{`@keyframes highlightBlink { 0%, 100% { background-color: transparent; } 50% { background-color: #fff9c4; transform: scale(1.01); } } .no-dot::before { content: none !important; }`}</style>
+      <style>{`
+        /* 점 표시(before)와 기본 리스트 스타일 완벽 제거 */
+        .item-row::before, .item-row span::before, .item-row div::before { content: none !important; }
+        .item-row { list-style: none !important; }
+        
+        @keyframes highlightBlink { 0%, 100% { background-color: transparent; } 50% { background-color: #fff9c4; transform: scale(1.01); } }
+        
+        button:focus, input:focus, .pixel-btn:focus { outline: none !important; box-shadow: none !important; }
+        button { border: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        
+        .fav-delete-btn { background: transparent !important; color: #cbd5e0 !important; border: none !important; }
+        .fav-delete-btn:hover { color: #f56565 !important; }
+      `}</style>
       <ShoppingMainSection {...props} />
       <ShoppingFavSection
         uniqueFavorites={props.uniqueFavorites}

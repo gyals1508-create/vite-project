@@ -4,10 +4,15 @@ const ShoppingFavSection = ({ uniqueFavorites, onAdd, onToggleFav }) => {
   return (
     <div
       className="pixel-card"
-      style={{ flex: 0.6, padding: "20px", minWidth: "250px" }}
+      style={{
+        flex: 0.6,
+        padding: "20px",
+        minWidth: "250px",
+        boxSizing: "border-box",
+      }}
     >
       <h3 style={{ fontSize: "1.3rem", marginBottom: "15px" }}>
-        <span style={{ color: "#fbc02d" }}>⭐</span> 즐겨찾기
+        <span style={{ color: "#fbc02d" }}>★</span> 즐겨찾기
       </h3>
       <ul style={{ listStyle: "none", padding: 0, width: "100%", margin: 0 }}>
         {uniqueFavorites.map((fav) => (
@@ -26,20 +31,23 @@ const ShoppingFavSection = ({ uniqueFavorites, onAdd, onToggleFav }) => {
           >
             <div
               onClick={() => onAdd(fav.text)}
-              style={{ cursor: "pointer", color: "#4a5568", fontWeight: "500" }}
+              style={{
+                cursor: "pointer",
+                flex: 1,
+                color: "#4a5568",
+                fontWeight: "500",
+              }}
             >
-              {/* ★ 즐겨찾기 목록에 노란색 별 복구 */}
-              <span style={{ color: "#fbc02d", marginRight: "5px" }}>★</span>
+              <span style={{ color: "#fbc02d", marginRight: "5px" }}>★</span>{" "}
               {fav.text}
             </div>
             <button
-              onClick={() => onToggleFav(fav)}
-              style={{
-                border: "none",
-                background: "none",
-                color: "#cbd5e0",
-                cursor: "pointer",
+              className="fav-delete-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFav(fav);
               }}
+              style={{ fontSize: "1.1rem", padding: "0 5px" }}
             >
               ✕
             </button>
@@ -48,7 +56,12 @@ const ShoppingFavSection = ({ uniqueFavorites, onAdd, onToggleFav }) => {
       </ul>
       {uniqueFavorites.length === 0 && (
         <p
-          style={{ color: "#cbd5e0", fontSize: "0.85rem", textAlign: "center" }}
+          style={{
+            color: "#cbd5e0",
+            fontSize: "0.85rem",
+            textAlign: "center",
+            marginTop: "20px",
+          }}
         >
           별을 눌러 추가해보세요!
         </p>
